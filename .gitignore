@@ -1,0 +1,17 @@
+COPILOT.md
+SenAI_Advanced_Technical_Test.pdf
+
+.env
+venv/
+node_modules/
+
+__pycache__/
+.pytest_cache/
+
+dist/
+build/
+
+.chroma/
+
+.idea/
+.vscode/
