@@ -1,6 +1,7 @@
 import os
 import argparse
 import glob
+from typing import List, Dict, Any
 from sentence_transformers import SentenceTransformer
 import chromadb
 from dotenv import load_dotenv
@@ -10,6 +11,17 @@ load_dotenv()
 
 CHROMA_PERSIST_PATH = os.getenv("CHROMA_PERSIST_PATH", "./chroma_db")
 EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL", "all-MiniLM-L6-v2")
+
+# Module-level singleton so the model is loaded once
+_rag_service_instance = None
+
+
+def get_rag_service() -> "RAGService":
+    """Return the shared RAGService singleton."""
+    global _rag_service_instance
+    if _rag_service_instance is None:
+        _rag_service_instance = RAGService()
+    return _rag_service_instance
 
 class KnowledgeBaseSeeder:
     def __init__(self):
@@ -65,6 +77,40 @@ class KnowledgeBaseSeeder:
             total_chunks += len(chunks)
             
         print(f"Done. {total_chunks} total chunks embedded and stored.")
+
+
+class RAGService:
+    """Service for querying the ChromaDB knowledge base."""
+
+    def __init__(self) -> None:
+        self.chroma_client = chromadb.PersistentClient(path=CHROMA_PERSIST_PATH)
+        self.collection = self.chroma_client.get_or_create_collection(name="knowledge_base")
+        self.model = SentenceTransformer(EMBEDDING_MODEL)
+
+    def search_knowledge_base(self, query: str, top_k: int = 3) -> List[Dict[str, Any]]:
+        """Embed query and return top-k chunks with source doc and similarity score."""
+        query_embedding = self.model.encode([query]).tolist()
+        results = self.collection.query(
+            query_embeddings=query_embedding,
+            n_results=top_k,
+            include=["documents", "metadatas", "distances"],
+        )
+
+        chunks = []
+        documents = results.get("documents", [[]])[0]
+        metadatas = results.get("metadatas", [[]])[0]
+        distances = results.get("distances", [[]])[0]
+
+        for doc, meta, dist in zip(documents, metadatas, distances):
+            # ChromaDB returns L2 distance; convert to a 0-1 similarity score
+            similarity = round(1 / (1 + dist), 4)
+            chunks.append({
+                "chunk_text": doc,
+                "source_doc": meta.get("source_doc", "unknown"),
+                "similarity_score": similarity,
+            })
+
+        return chunks
 
 
 if __name__ == "__main__":
