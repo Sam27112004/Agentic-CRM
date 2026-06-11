@@ -3,16 +3,20 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import sys
 import time
 from datetime import datetime
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 from backend.database import SessionLocal
 from backend.schemas import IngestEmailPayload
 from backend.services.ingestion import IngestionError, ingest_email
 
 
-DEFAULT_DATA_PATH = Path("data/email-data-advanced.json")
+PROJECT_ROOT = Path(__file__).parent.parent.parent
+DEFAULT_DATA_PATH = PROJECT_ROOT / "data" / "email-data-advanced.json"
 
 
 def load_messages(data_path: Path) -> list[dict[str, object]]:
