@@ -10,7 +10,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
-from backend.database import SessionLocal
+from backend.database import SessionLocal, init_db
 from backend.schemas import IngestEmailPayload
 from backend.services.ingestion import IngestionError, ingest_email
 
@@ -60,6 +60,7 @@ def build_payload(raw_message: dict[str, object]) -> IngestEmailPayload:
 
 
 def run_simulation(data_path: Path, speed: float, message_id: str | None = None) -> None:
+    init_db()
     messages = load_messages(data_path)
     if message_id is not None:
         messages = [message for message in messages if str(message.get("message_id")) == message_id]
