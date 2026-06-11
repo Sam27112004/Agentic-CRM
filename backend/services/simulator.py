@@ -75,6 +75,12 @@ def run_simulation(data_path: Path, speed: float, message_id: str | None = None)
             payload = build_payload(raw_message)
             try:
                 result = ingest_email(db=db, payload=payload)
+                
+                # Execute the agent processing immediately!
+                from backend.main import process_background_job
+                print(f"Processing job {result['job_id']} for message {payload.message_id}...")
+                process_background_job(result["job_id"])
+                
                 print(json.dumps(result, default=str))
             except IngestionError as exc:
                 print(

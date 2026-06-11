@@ -135,18 +135,19 @@ function buildColumns(onSelectThread) {
 function StatsBar({ stats }) {
   if (!stats) return null
   const items = [
-    { label: 'Total', value: stats.total_emails, color: 'text-white' },
-    { label: 'Pending', value: stats.by_status?.Received || 0, color: 'text-blue-400' },
-    { label: 'Escalated', value: stats.by_status?.Escalated || 0, color: 'text-red-400' },
-    { label: 'Replied', value: stats.by_status?.Replied || 0, color: 'text-green-400' },
-    { label: 'Spam', value: stats.by_status?.Ignored || 0, color: 'text-slate-500' },
+    { label: 'Total Ingested', value: stats.total_emails, color: 'text-white', glow: 'shadow-[0_0_15px_rgba(255,255,255,0.1)]' },
+    { label: 'Pending Triage', value: stats.by_status?.Received || 0, color: 'text-indigo-400', glow: 'shadow-[0_0_15px_rgba(129,140,248,0.2)]' },
+    { label: 'Needs Escalation', value: stats.by_status?.Escalated || 0, color: 'text-red-400', glow: 'shadow-[0_0_15px_rgba(248,113,113,0.2)]' },
+    { label: 'Auto-Replied', value: stats.by_status?.Replied || 0, color: 'text-emerald-400', glow: 'shadow-[0_0_15px_rgba(52,211,153,0.2)]' },
+    { label: 'Spam / Ignored', value: stats.by_status?.Ignored || 0, color: 'text-slate-400', glow: 'shadow-[0_0_15px_rgba(148,163,184,0.1)]' },
   ]
   return (
-    <div className="flex gap-6 mb-6">
+    <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
       {items.map((s) => (
-        <div key={s.label} className="rounded-lg border border-slate-800 bg-slate-900/60 px-5 py-3">
-          <p className="text-xs text-slate-400 uppercase tracking-wider">{s.label}</p>
-          <p className={`text-2xl font-bold ${s.color}`}>{s.value}</p>
+        <div key={s.label} className={`relative overflow-hidden rounded-xl border border-slate-700/50 bg-slate-900/40 p-5 backdrop-blur-xl transition-all duration-300 hover:-translate-y-1 hover:border-slate-600/50 hover:bg-slate-800/50 ${s.glow}`}>
+          <div className="absolute -right-4 -top-4 h-24 w-24 rounded-full bg-white/5 blur-2xl"></div>
+          <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-widest mb-1 relative z-10">{s.label}</p>
+          <p className={`text-3xl font-black ${s.color} relative z-10`}>{s.value}</p>
         </div>
       ))}
     </div>
@@ -192,31 +193,39 @@ export default function Inbox({ onSelectThread }) {
   const totalPages = Math.ceil((total || 0) / 50)
 
   return (
-    <div>
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-xl font-semibold text-white">Mission Control</h2>
+    <div className="flex flex-col h-[calc(100vh-6rem)]">
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h2 className="text-3xl font-black text-white tracking-tight flex items-center gap-3">
+            Mission <span className="bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">Control</span>
+          </h2>
+          <p className="text-sm text-slate-400 mt-1">Real-time email triage and automated response monitoring.</p>
+        </div>
         <button
           onClick={refetch}
-          className="rounded-md bg-indigo-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-indigo-500 transition-colors"
+          className="rounded-lg bg-indigo-600/20 ring-1 ring-indigo-500/50 px-4 py-2 text-sm font-semibold text-indigo-300 hover:bg-indigo-600 hover:text-white transition-all shadow-[0_0_15px_rgba(79,70,229,0.3)] flex items-center gap-2 group"
         >
-          Refresh
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 group-hover:rotate-180 transition-transform duration-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+          </svg>
+          Refresh Data
         </button>
       </div>
 
       <StatsBar stats={stats} />
 
       {/* Filters row */}
-      <div className="flex items-center gap-4 mb-4">
+      <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4 mb-6 bg-slate-900/30 p-4 rounded-xl border border-slate-800/60 backdrop-blur-sm shadow-sm">
         {/* Status tabs */}
-        <div className="flex gap-1 rounded-lg bg-slate-900 p-1">
+        <div className="flex flex-wrap gap-2">
           {STATUS_TABS.map((tab) => (
             <button
               key={tab.label}
               onClick={() => { setStatusFilter(tab.key); setPage(1) }}
-              className={`rounded-md px-3 py-1 text-sm font-medium transition-colors ${
+              className={`rounded-full px-5 py-2 text-sm font-semibold transition-all duration-300 ${
                 statusFilter === tab.key
-                  ? 'bg-indigo-600/30 text-indigo-300'
-                  : 'text-slate-400 hover:text-slate-200'
+                  ? 'bg-indigo-600 text-white shadow-[0_4px_15px_rgba(79,70,229,0.4)]'
+                  : 'bg-slate-800/50 text-slate-400 hover:bg-slate-700/50 hover:text-slate-200'
               }`}
             >
               {tab.label}
@@ -224,26 +233,33 @@ export default function Inbox({ onSelectThread }) {
           ))}
         </div>
 
-        {/* Category filter */}
-        <select
-          value={categoryFilter}
-          onChange={(e) => { setCategoryFilter(e.target.value); setPage(1) }}
-          className="rounded-md border border-slate-700 bg-slate-900 px-3 py-1.5 text-sm text-slate-300 focus:border-indigo-500 focus:outline-none"
-        >
-          <option value="">All Categories</option>
-          {['Complaint', 'Inquiry', 'Bug Report', 'Feature Request', 'Compliance', 'Legal', 'Billing', 'Spam', 'Internal', 'Pending', 'Security', 'Other'].map((c) => (
-            <option key={c} value={c}>{c}</option>
-          ))}
-        </select>
+        <div className="flex flex-col sm:flex-row items-center gap-3">
+          {/* Category filter */}
+          <select
+            value={categoryFilter}
+            onChange={(e) => { setCategoryFilter(e.target.value); setPage(1) }}
+            className="w-full sm:w-auto rounded-lg border border-slate-700/50 bg-slate-800/80 px-4 py-2.5 text-sm font-medium text-slate-300 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition-all shadow-inner"
+          >
+            <option value="">All Categories</option>
+            {['Complaint', 'Inquiry', 'Bug Report', 'Feature Request', 'Compliance', 'Legal', 'Billing', 'Spam', 'Internal', 'Pending', 'Security', 'Other'].map((c) => (
+              <option key={c} value={c}>{c}</option>
+            ))}
+          </select>
 
-        {/* Sender search */}
-        <input
-          type="text"
-          placeholder="Search sender..."
-          value={senderSearch}
-          onChange={(e) => { setSenderSearch(e.target.value); setPage(1) }}
-          className="rounded-md border border-slate-700 bg-slate-900 px-3 py-1.5 text-sm text-slate-300 placeholder-slate-500 focus:border-indigo-500 focus:outline-none w-52"
-        />
+          {/* Sender search */}
+          <div className="relative w-full sm:w-auto">
+            <svg xmlns="http://www.w3.org/2000/svg" className="absolute left-3.5 top-2.5 h-4 w-4 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+            <input
+              type="text"
+              placeholder="Search senders..."
+              value={senderSearch}
+              onChange={(e) => { setSenderSearch(e.target.value); setPage(1) }}
+              className="w-full sm:w-64 rounded-lg border border-slate-700/50 bg-slate-800/80 pl-10 pr-4 py-2.5 text-sm font-medium text-slate-300 placeholder-slate-500 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition-all shadow-inner"
+            />
+          </div>
+        </div>
       </div>
 
       {/* Error */}
@@ -254,11 +270,11 @@ export default function Inbox({ onSelectThread }) {
       )}
 
       {/* Table */}
-      <div className="overflow-x-auto rounded-lg border border-slate-800">
+      <div className="overflow-x-auto rounded-xl border border-slate-800/60 bg-slate-900/50 backdrop-blur-sm shadow-[0_8px_30px_rgb(0,0,0,0.4)]">
         <table className="w-full text-sm">
           <thead>
             {table.getHeaderGroups().map((headerGroup) => (
-              <tr key={headerGroup.id} className="border-b border-slate-800 bg-slate-900/60">
+              <tr key={headerGroup.id} className="border-b border-slate-800/60 bg-slate-900/90 backdrop-blur-md shadow-sm">
                 {headerGroup.headers.map((header) => (
                   <th
                     key={header.id}
@@ -292,10 +308,10 @@ export default function Inbox({ onSelectThread }) {
                 <tr
                   key={row.id}
                   onClick={() => onSelectThread?.(row.original.sender)}
-                  className="cursor-pointer border-b border-slate-800/50 hover:bg-slate-800/40 transition-colors"
+                  className="group cursor-pointer border-b border-slate-800/50 transition-all duration-200 hover:bg-indigo-900/10 hover:shadow-[inset_0_1px_0_0_rgba(99,102,241,0.1),inset_0_-1px_0_0_rgba(99,102,241,0.1)]"
                 >
                   {row.getVisibleCells().map((cell) => (
-                    <td key={cell.id} className="px-4 py-3">
+                    <td key={cell.id} className="px-4 py-3 transition-colors group-hover:text-slate-100">
                       {flexRender(cell.column.columnDef.cell, cell.getContext())}
                     </td>
                   ))}

@@ -2,8 +2,8 @@
 
 > AI-powered Customer Relationship Management system that autonomously monitors a high-volume inbox, triages emails with multi-dimensional intelligence, executes agentic workflows, and surfaces real-time business insights.
 
-![Agentic CRM Demo](./frontend/public/favicon.ico)
-<!-- Replace with actual link: https://github.com/YOUR_USERNAME/YOUR_REPO_NAME -->
+
+
 
 ---
 
@@ -219,8 +219,8 @@ agentic-crm/
 ### 1. Clone the repository
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/agentic-crm.git
-cd agentic-crm
+git clone https://github.com/Sam27112004/Agentic-CRM.git
+cd Agentic-CRM
 ```
 
 ### 2. Backend setup

@@ -138,63 +138,69 @@ function DraftViewer({ draft, onRefetch }) {
   }
 
   return (
-    <div className="mt-6 rounded-lg border border-indigo-900/50 bg-indigo-950/20 p-4">
-      <div className="flex justify-between items-center mb-4">
-        <h4 className="text-sm font-semibold text-indigo-400 uppercase tracking-wider flex items-center gap-2">
-          Proposed Draft Reply
-        </h4>
-        <Badge label={draft.status} className="bg-yellow-500/20 text-yellow-300" />
-      </div>
-      
-      {isEditing ? (
-        <textarea
-          className="w-full bg-slate-900 rounded border border-slate-700 p-4 text-sm text-slate-300 focus:outline-none focus:border-indigo-500 min-h-[150px]"
-          value={content}
-          onChange={(e) => setContent(e.target.value)}
-        />
-      ) : (
-        <div className="bg-slate-900 rounded border border-slate-800 p-4 whitespace-pre-wrap text-sm text-slate-300">
-          {draft.content}
+    <div className="mt-6 overflow-hidden rounded-xl border border-indigo-500/30 bg-indigo-950/40 backdrop-blur-md shadow-[0_0_20px_rgba(79,70,229,0.15)] relative">
+      <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/10 to-purple-500/10 pointer-events-none"></div>
+      <div className="p-5 relative z-10">
+        <div className="flex justify-between items-center mb-4">
+          <h4 className="text-sm font-bold text-indigo-300 uppercase tracking-wider flex items-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+            </svg>
+            Proposed Draft Reply
+          </h4>
+          <Badge label={draft.status} className="bg-yellow-500/20 text-yellow-300 ring-1 ring-yellow-500/30" />
         </div>
-      )}
+        
+        {isEditing ? (
+          <textarea
+            className="w-full bg-slate-900/80 rounded-lg border border-indigo-500/50 p-4 text-sm text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 min-h-[150px] shadow-inner"
+            value={content}
+            onChange={(e) => setContent(e.target.value)}
+          />
+        ) : (
+          <div className="bg-slate-900/60 rounded-lg border border-slate-700/50 p-5 whitespace-pre-wrap text-sm text-slate-200 shadow-inner">
+            {draft.content}
+          </div>
+        )}
 
-      {draft.status === 'Pending' && (
-        <div className="mt-4 flex gap-3">
-          {isEditing ? (
-            <>
-              <button 
-                onClick={handleSaveEdit}
-                disabled={loading}
-                className="rounded bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-500 transition-colors disabled:opacity-50"
-              >
-                Save
-              </button>
-              <button 
-                onClick={() => { setIsEditing(false); setContent(draft.content) }}
-                className="rounded border border-slate-700 bg-slate-800 px-4 py-2 text-sm font-medium text-slate-300 hover:bg-slate-700 transition-colors"
-              >
-                Cancel
-              </button>
-            </>
-          ) : (
-            <>
-              <button 
-                onClick={handleApprove}
-                disabled={loading}
-                className="rounded bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-500 transition-colors disabled:opacity-50"
-              >
-                Approve & Send
-              </button>
-              <button 
-                onClick={() => setIsEditing(true)}
-                className="rounded border border-slate-700 bg-slate-800 px-4 py-2 text-sm font-medium text-slate-300 hover:bg-slate-700 transition-colors"
-              >
-                Edit Draft
-              </button>
-            </>
-          )}
-        </div>
-      )}
+        {draft.status === 'Pending' && (
+          <div className="mt-5 flex gap-3">
+            {isEditing ? (
+              <>
+                <button 
+                  onClick={handleSaveEdit}
+                  disabled={loading}
+                  className="rounded-lg bg-gradient-to-r from-indigo-600 to-indigo-500 px-5 py-2.5 text-sm font-semibold text-white shadow-lg hover:from-indigo-500 hover:to-indigo-400 transition-all disabled:opacity-50"
+                >
+                  Save
+                </button>
+                <button 
+                  onClick={() => { setIsEditing(false); setContent(draft.content) }}
+                  className="rounded-lg border border-slate-700/50 bg-slate-800/80 px-5 py-2.5 text-sm font-semibold text-slate-300 hover:bg-slate-700 transition-all"
+                >
+                  Cancel
+                </button>
+              </>
+            ) : (
+              <>
+                <button 
+                  onClick={handleApprove}
+                  disabled={loading}
+                  className="rounded-lg bg-gradient-to-r from-indigo-600 to-indigo-500 px-5 py-2.5 text-sm font-semibold text-white shadow-[0_0_15px_rgba(79,70,229,0.4)] hover:shadow-[0_0_25px_rgba(79,70,229,0.6)] hover:from-indigo-500 hover:to-indigo-400 transition-all disabled:opacity-50"
+                >
+                  Approve & Send
+                </button>
+                <button 
+                  onClick={() => setIsEditing(true)}
+                  className="rounded-lg border border-slate-700/50 bg-slate-800/80 px-5 py-2.5 text-sm font-semibold text-slate-300 hover:bg-slate-700 transition-all"
+                >
+                  Edit Draft
+                </button>
+              </>
+            )}
+          </div>
+        )}
+      </div>
     </div>
   )
 }

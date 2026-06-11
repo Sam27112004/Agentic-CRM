@@ -21,6 +21,9 @@ config = context.config
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
+from dotenv import load_dotenv
+load_dotenv(os.path.join(PROJECT_ROOT, ".env"))
+
 target_metadata = Base.metadata
 
 

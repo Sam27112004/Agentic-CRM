@@ -101,29 +101,55 @@ export default function Analytics() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <div className="mb-8">
-        <h2 className="text-2xl font-bold text-white">Analytics Dashboard</h2>
-        <p className="text-slate-400">Overview of email triage volume and classification</p>
+        <h2 className="text-3xl font-black text-white tracking-tight">Analytics <span className="bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">Dashboard</span></h2>
+        <p className="text-slate-400 mt-2 text-lg">Overview of email triage volume and classification</p>
       </div>
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div className="rounded-xl border border-slate-800 bg-slate-900/50 p-6">
-          <p className="text-sm font-medium text-slate-400 uppercase tracking-wider mb-2">Total Ingested</p>
-          <p className="text-4xl font-bold text-white">{stats.total_emails}</p>
+        <div className="rounded-2xl border border-slate-700/50 bg-slate-900/40 p-6 backdrop-blur-xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] transition-transform hover:-translate-y-1 hover:shadow-[0_8px_30px_rgba(79,70,229,0.15)] group">
+          <p className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-slate-500 group-hover:text-slate-300 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+            </svg>
+            Total Ingested
+          </p>
+          <p className="text-5xl font-black text-white">{stats.total_emails}</p>
         </div>
-        <div className="rounded-xl border border-indigo-900/50 bg-indigo-950/20 p-6">
-          <p className="text-sm font-medium text-indigo-400 uppercase tracking-wider mb-2">Automated Replies</p>
-          <p className="text-4xl font-bold text-white">{stats.by_status?.Replied || 0}</p>
+        
+        <div className="rounded-2xl border border-indigo-500/30 bg-indigo-950/20 p-6 backdrop-blur-xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] transition-transform hover:-translate-y-1 hover:shadow-[0_8px_30px_rgba(79,70,229,0.3)] relative overflow-hidden group">
+          <div className="absolute -right-10 -top-10 h-32 w-32 rounded-full bg-indigo-500/20 blur-3xl group-hover:bg-indigo-500/30 transition-colors"></div>
+          <p className="text-sm font-semibold text-indigo-400 uppercase tracking-wider mb-3 relative z-10 flex items-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+            </svg>
+            Automated Replies
+          </p>
+          <p className="text-5xl font-black text-white relative z-10">{stats.by_status?.Replied || 0}</p>
         </div>
-        <div className="rounded-xl border border-red-900/50 bg-red-950/20 p-6">
-          <p className="text-sm font-medium text-red-400 uppercase tracking-wider mb-2">Human Escalations</p>
-          <p className="text-4xl font-bold text-white">{stats.by_status?.Escalated || 0}</p>
+        
+        <div className="rounded-2xl border border-red-500/30 bg-red-950/20 p-6 backdrop-blur-xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] transition-transform hover:-translate-y-1 hover:shadow-[0_8px_30px_rgba(239,68,68,0.3)] relative overflow-hidden group">
+          <div className="absolute -right-10 -top-10 h-32 w-32 rounded-full bg-red-500/20 blur-3xl group-hover:bg-red-500/30 transition-colors"></div>
+          <p className="text-sm font-semibold text-red-400 uppercase tracking-wider mb-3 relative z-10 flex items-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+            Human Escalation
+          </p>
+          <p className="text-5xl font-black text-white relative z-10">{stats.by_status?.Escalated || 0}</p>
         </div>
-        <div className="rounded-xl border border-slate-800 bg-slate-900/50 p-6">
-          <p className="text-sm font-medium text-slate-400 uppercase tracking-wider mb-2">Spam / Ignored</p>
-          <p className="text-4xl font-bold text-white">{stats.by_status?.Ignored || 0}</p>
+
+        <div className="rounded-2xl border border-yellow-500/30 bg-yellow-950/20 p-6 backdrop-blur-xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] transition-transform hover:-translate-y-1 hover:shadow-[0_8px_30px_rgba(234,179,8,0.3)] relative overflow-hidden group">
+          <div className="absolute -right-10 -top-10 h-32 w-32 rounded-full bg-yellow-500/20 blur-3xl group-hover:bg-yellow-500/30 transition-colors"></div>
+          <p className="text-sm font-semibold text-yellow-400 uppercase tracking-wider mb-3 relative z-10 flex items-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            Pending Agent
+          </p>
+          <p className="text-5xl font-black text-white relative z-10">{stats.by_status?.Processing || 0}</p>
         </div>
       </div>
 
