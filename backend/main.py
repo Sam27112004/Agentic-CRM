@@ -87,3 +87,25 @@ def rag_search(q: str = Query(..., description="Query text to search the knowled
     rag = get_rag_service()
     chunks = rag.search_knowledge_base(q)
     return RAGSearchResponse(query=q, results=chunks)
+
+
+# ---------------------------------------------------------------------------
+# Agent
+# ---------------------------------------------------------------------------
+
+@app.post("/agent/dry-run/{email_id}")
+def agent_dry_run(email_id: int, db: Session = Depends(get_db)):
+    """Run the agent reasoning loop without executing write actions.
+
+    Returns the complete reasoning trace for inspection.
+    """
+    from backend.services.agent import run_agent
+
+    try:
+        result = run_agent(db=db, email_id=email_id, dry_run=True)
+        return result
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={"error_code": "EMAIL_NOT_FOUND", "message": str(exc)},
+        ) from exc
