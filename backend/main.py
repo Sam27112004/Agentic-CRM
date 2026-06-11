@@ -342,3 +342,152 @@ def agent_dry_run(email_id: int, db: Session = Depends(get_db)):
             detail={"error_code": "EMAIL_NOT_FOUND", "message": str(exc)},
         ) from exc
 
+
+# ---------------------------------------------------------------------------
+# Responses and Drafts
+# ---------------------------------------------------------------------------
+
+from backend.schemas import DraftEditPayload, RespondPayload, ContactStatusUpdatePayload
+
+@app.post("/respond/{email_id}")
+def send_response(email_id: int, payload: RespondPayload, db: Session = Depends(get_db)):
+    email = db.get(Email, email_id)
+    if not email:
+        raise HTTPException(status_code=404, detail="Email not found")
+    
+    # In a real system, this would send an email. For now we simulate it.
+    email.status = "Replied"
+    action = Action(
+        email_id=email_id,
+        action_type="Manual-Reply",
+        proposed_content=payload.content,
+        is_approved=True,
+    )
+    db.add(action)
+    db.commit()
+    return {"status": "success", "message": "Reply sent"}
+
+
+@app.patch("/drafts/{id}")
+def edit_draft(id: int, payload: DraftEditPayload, db: Session = Depends(get_db)):
+    draft = db.get(Draft, id)
+    if not draft:
+        raise HTTPException(status_code=404, detail="Draft not found")
+    
+    draft.content = payload.content
+    draft.status = "Edited"
+    db.commit()
+    return {"status": "success", "draft": {"id": draft.id, "content": draft.content, "status": draft.status}}
+
+
+@app.post("/drafts/{id}/approve")
+def approve_draft(id: int, db: Session = Depends(get_db)):
+    draft = db.get(Draft, id)
+    if not draft:
+        raise HTTPException(status_code=404, detail="Draft not found")
+    
+    email = db.get(Email, draft.email_id)
+    email.status = "Replied"
+    draft.status = "Approved"
+    
+    action = Action(
+        email_id=email.id,
+        action_type="Auto-Reply",
+        proposed_content=draft.content,
+        is_approved=True,
+    )
+    db.add(action)
+    db.commit()
+    return {"status": "success", "message": "Draft approved and sent"}
+
+
+# ---------------------------------------------------------------------------
+# Analytics and Intelligence
+# ---------------------------------------------------------------------------
+
+@app.get("/analytics/sentiment-trend")
+def get_sentiment_trend(sender: Optional[str] = None, days: int = 30, db: Session = Depends(get_db)):
+    # Group by DATE(timestamp) and avg(sentiment_score)
+    query = select(func.date(Email.timestamp).label("date"), func.avg(Email.sentiment_score).label("avg_sentiment")).where(Email.sentiment_score.is_not(None))
+    if sender:
+        query = query.where(Email.sender == sender)
+        
+    query = query.group_by(func.date(Email.timestamp)).order_by(func.date(Email.timestamp).asc())
+    results = db.execute(query).all()
+    
+    return [
+        {"date": str(r.date), "avg_sentiment": float(r.avg_sentiment)} for r in results
+    ]
+
+@app.get("/analytics/category-breakdown")
+def get_category_breakdown(days: int = 30, db: Session = Depends(get_db)):
+    query = select(Email.category, func.count(Email.id).label("count")).group_by(Email.category)
+    results = db.execute(query).all()
+    return [{"category": r.category or "Unknown", "count": r.count} for r in results]
+
+
+@app.get("/intelligence/reputation")
+def get_intelligence_reputation(company_name: str, db: Session = Depends(get_db)):
+    from backend.models.web_intelligence_cache import WebIntelligenceCache
+    # get latest from cache
+    cache = db.scalars(
+        select(WebIntelligenceCache)
+        .where(WebIntelligenceCache.target_entity == company_name)
+        .order_by(WebIntelligenceCache.scraped_at.desc())
+    ).first()
+    
+    if not cache:
+        raise HTTPException(status_code=404, detail="No reputation data found")
+        
+    return cache.scraped_data
+
+
+# ---------------------------------------------------------------------------
+# Audit and Contacts
+# ---------------------------------------------------------------------------
+
+@app.get("/audit/{entity_type}/{entity_id}")
+def get_audit(entity_type: str, entity_id: int, db: Session = Depends(get_db)):
+    from backend.models.audit_log import AuditLog
+    logs = db.scalars(
+        select(AuditLog)
+        .where(AuditLog.entity_type == entity_type)
+        .where(AuditLog.entity_id == entity_id)
+        .order_by(AuditLog.timestamp.desc())
+    ).all()
+    
+    return [
+        {
+            "id": l.id,
+            "action": l.action,
+            "performed_by": l.performed_by,
+            "timestamp": str(l.timestamp),
+            "diff": l.diff,
+        }
+        for l in logs
+    ]
+
+@app.get("/contacts/{email}")
+def get_contact_profile(email: str, db: Session = Depends(get_db)):
+    contact = db.scalars(select(Contact).where(Contact.email == email)).first()
+    if not contact:
+        raise HTTPException(status_code=404, detail="Contact not found")
+        
+    return {
+        "email": contact.email,
+        "name": contact.name,
+        "company": contact.company,
+        "status": contact.status,
+        "account_value": float(contact.account_value) if contact.account_value else 0,
+        "churn_risk_score": float(contact.churn_risk_score) if contact.churn_risk_score else None,
+    }
+
+@app.patch("/contacts/{email}/status")
+def update_contact_status(email: str, payload: ContactStatusUpdatePayload, db: Session = Depends(get_db)):
+    contact = db.scalars(select(Contact).where(Contact.email == email)).first()
+    if not contact:
+        raise HTTPException(status_code=404, detail="Contact not found")
+        
+    contact.status = payload.status
+    db.commit()
+    return {"status": "success", "contact_status": contact.status}

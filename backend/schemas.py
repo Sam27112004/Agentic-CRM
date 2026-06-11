@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime
 import re
-from typing import Any, Optional
+from typing import Any, Optional, List
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
@@ -41,3 +41,15 @@ class JobStatusResponse(BaseModel):
     error_message: Optional[str] = None
     created_at: Optional[datetime] = None
     completed_at: Optional[datetime] = None
+
+
+class DraftEditPayload(BaseModel):
+    content: str
+
+
+class ContactStatusUpdatePayload(BaseModel):
+    status: str
+
+
+class RespondPayload(BaseModel):
+    content: str

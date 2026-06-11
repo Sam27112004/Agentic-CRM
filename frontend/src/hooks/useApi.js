@@ -57,7 +57,7 @@ export function useThread(contactEmail) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
 
-  useEffect(() => {
+  const fetchThread = useCallback(() => {
     if (!contactEmail) return
     setLoading(true)
     fetch(`${API_BASE}/threads/${encodeURIComponent(contactEmail)}`)
@@ -70,5 +70,72 @@ export function useThread(contactEmail) {
       .finally(() => setLoading(false))
   }, [contactEmail])
 
-  return { data, loading, error }
+  useEffect(() => {
+    fetchThread()
+  }, [fetchThread])
+
+  return { data, loading, error, refetch: fetchThread }
+}
+
+export async function approveDraft(draftId) {
+  const res = await fetch(`${API_BASE}/drafts/${draftId}/approve`, { method: 'POST' })
+  if (!res.ok) throw new Error(`HTTP ${res.status}`)
+  return res.json()
+}
+
+export async function editDraft(draftId, content) {
+  const res = await fetch(`${API_BASE}/drafts/${draftId}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ content }),
+  })
+  if (!res.ok) throw new Error(`HTTP ${res.status}`)
+  return res.json()
+}
+
+export async function sendResponse(emailId, content) {
+  const res = await fetch(`${API_BASE}/respond/${emailId}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ content }),
+  })
+  if (!res.ok) throw new Error(`HTTP ${res.status}`)
+  return res.json()
+}
+
+export function useSentimentTrend(sender = null, days = 30) {
+  const [data, setData] = useState([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    let url = `${API_BASE}/analytics/sentiment-trend?days=${days}`
+    if (sender) url += `&sender=${encodeURIComponent(sender)}`
+    
+    fetch(url)
+      .then((res) => res.json())
+      .then(setData)
+      .catch(() => setData([]))
+      .finally(() => setLoading(false))
+  }, [sender, days])
+
+  return { data, loading }
+}
+
+export function useReputation(companyName) {
+  const [data, setData] = useState(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    if (!companyName) {
+      setLoading(false)
+      return
+    }
+    fetch(`${API_BASE}/intelligence/reputation?company_name=${encodeURIComponent(companyName)}`)
+      .then((res) => res.json())
+      .then(setData)
+      .catch(() => setData(null))
+      .finally(() => setLoading(false))
+  }, [companyName])
+
+  return { data, loading }
 }

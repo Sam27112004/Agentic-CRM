@@ -103,8 +103,40 @@ function AgentLogViewer({ action }) {
   )
 }
 
-function DraftViewer({ draft }) {
+function DraftViewer({ draft, onRefetch }) {
+  const [isEditing, setIsEditing] = useState(false)
+  const [content, setContent] = useState(draft ? draft.content : '')
+  const [loading, setLoading] = useState(false)
+
   if (!draft) return null
+
+  const handleApprove = async () => {
+    setLoading(true)
+    try {
+      const { approveDraft } = await import('../hooks/useApi.js')
+      await approveDraft(draft.id)
+      if (onRefetch) onRefetch()
+    } catch (e) {
+      alert("Failed to approve draft: " + e.message)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleSaveEdit = async () => {
+    setLoading(true)
+    try {
+      const { editDraft } = await import('../hooks/useApi.js')
+      await editDraft(draft.id, content)
+      setIsEditing(false)
+      if (onRefetch) onRefetch()
+    } catch (e) {
+      alert("Failed to save draft: " + e.message)
+    } finally {
+      setLoading(false)
+    }
+  }
+
   return (
     <div className="mt-6 rounded-lg border border-indigo-900/50 bg-indigo-950/20 p-4">
       <div className="flex justify-between items-center mb-4">
@@ -113,17 +145,54 @@ function DraftViewer({ draft }) {
         </h4>
         <Badge label={draft.status} className="bg-yellow-500/20 text-yellow-300" />
       </div>
-      <div className="bg-slate-900 rounded border border-slate-800 p-4 whitespace-pre-wrap text-sm text-slate-300">
-        {draft.content}
-      </div>
+      
+      {isEditing ? (
+        <textarea
+          className="w-full bg-slate-900 rounded border border-slate-700 p-4 text-sm text-slate-300 focus:outline-none focus:border-indigo-500 min-h-[150px]"
+          value={content}
+          onChange={(e) => setContent(e.target.value)}
+        />
+      ) : (
+        <div className="bg-slate-900 rounded border border-slate-800 p-4 whitespace-pre-wrap text-sm text-slate-300">
+          {draft.content}
+        </div>
+      )}
+
       {draft.status === 'Pending' && (
         <div className="mt-4 flex gap-3">
-          <button className="rounded bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-500 transition-colors">
-            Approve & Send
-          </button>
-          <button className="rounded border border-slate-700 bg-slate-800 px-4 py-2 text-sm font-medium text-slate-300 hover:bg-slate-700 transition-colors">
-            Edit Draft
-          </button>
+          {isEditing ? (
+            <>
+              <button 
+                onClick={handleSaveEdit}
+                disabled={loading}
+                className="rounded bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-500 transition-colors disabled:opacity-50"
+              >
+                Save
+              </button>
+              <button 
+                onClick={() => { setIsEditing(false); setContent(draft.content) }}
+                className="rounded border border-slate-700 bg-slate-800 px-4 py-2 text-sm font-medium text-slate-300 hover:bg-slate-700 transition-colors"
+              >
+                Cancel
+              </button>
+            </>
+          ) : (
+            <>
+              <button 
+                onClick={handleApprove}
+                disabled={loading}
+                className="rounded bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-500 transition-colors disabled:opacity-50"
+              >
+                Approve & Send
+              </button>
+              <button 
+                onClick={() => setIsEditing(true)}
+                className="rounded border border-slate-700 bg-slate-800 px-4 py-2 text-sm font-medium text-slate-300 hover:bg-slate-700 transition-colors"
+              >
+                Edit Draft
+              </button>
+            </>
+          )}
         </div>
       )}
     </div>
@@ -135,7 +204,7 @@ function DraftViewer({ draft }) {
 /* ------------------------------------------------------------------ */
 
 export default function ThreadWorkspace({ contactEmail, onBack }) {
-  const { data, loading, error } = useThread(contactEmail)
+  const { data, loading, error, refetch } = useThread(contactEmail)
   const [selectedEmailId, setSelectedEmailId] = useState(null)
 
   const emails = data?.emails || []
@@ -263,7 +332,7 @@ export default function ThreadWorkspace({ contactEmail, onBack }) {
 
               {/* Drafts */}
               {emailDrafts.map(draft => (
-                <DraftViewer key={draft.id} draft={draft} />
+                <DraftViewer key={draft.id} draft={draft} onRefetch={refetch} />
               ))}
 
               {/* Agent Reasoning */}

@@ -10,9 +10,11 @@ import {
   PieChart,
   Pie,
   Cell,
-  Legend
+  Legend,
+  LineChart,
+  Line
 } from 'recharts'
-import { useDashboardStats } from '../hooks/useApi.js'
+import { useDashboardStats, useSentimentTrend } from '../hooks/useApi.js'
 
 /* ------------------------------------------------------------------ */
 /* Color Maps                                                          */
@@ -65,6 +67,7 @@ const CustomTooltip = ({ active, payload, label }) => {
 
 export default function Analytics() {
   const { stats, loading } = useDashboardStats()
+  const { data: sentimentData, loading: sentimentLoading } = useSentimentTrend()
 
   // Format data for Recharts
   const categoryData = useMemo(() => {
@@ -185,6 +188,29 @@ export default function Analytics() {
           </div>
         </div>
 
+      </div>
+
+      {/* Sentiment Trend Chart */}
+      <div className="rounded-xl border border-slate-800 bg-slate-900/40 p-6 mt-6">
+        <h3 className="text-lg font-semibold text-white mb-6">Sentiment Trend (30 Days)</h3>
+        <div className="h-80 w-full">
+          {sentimentLoading ? (
+            <div className="flex h-full items-center justify-center text-slate-500">Loading trend data...</div>
+          ) : sentimentData && sentimentData.length > 0 ? (
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={sentimentData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
+                <XAxis dataKey="date" stroke="#94a3b8" fontSize={12} tickFormatter={(tick) => new Date(tick).toLocaleDateString()} />
+                <YAxis domain={[-1, 1]} stroke="#94a3b8" fontSize={12} />
+                <Tooltip content={<CustomTooltip />} />
+                <Legend />
+                <Line type="monotone" dataKey="avg_sentiment" name="Average Sentiment" stroke="#8b5cf6" activeDot={{ r: 8 }} />
+              </LineChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="flex h-full items-center justify-center text-slate-500">No sentiment data available</div>
+          )}
+        </div>
       </div>
     </div>
   )
