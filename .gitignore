@@ -3,6 +3,7 @@ SenAI_Advanced_Technical_Test.pdf
 
 .env
 venv/
+.venv/
 node_modules/
 
 __pycache__/
