@@ -37,7 +37,6 @@ load_dotenv()
 logger = logging.getLogger(__name__)
 
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
 LLM_MODEL = os.getenv("LLM_MODEL", "gemini-1.5-flash")
 
 MAX_STEPS = 6
@@ -133,18 +132,16 @@ def _build_agent_context(
 
 
 def _call_llm(system_prompt: str, messages: list[dict[str, str]]) -> str:
-    """Call the LLM with a multi-turn conversation."""
-    if GEMINI_API_KEY:
-        return _call_gemini_agent(system_prompt, messages)
-    elif OPENAI_API_KEY:
-        return _call_openai_agent(system_prompt, messages)
-    else:
-        raise RuntimeError("No LLM API key configured. Set GEMINI_API_KEY or OPENAI_API_KEY in .env")
+    """Call the LLM with a multi-turn conversation (Gemini)."""
+    return _call_gemini_agent(system_prompt, messages)
 
 
 def _call_gemini_agent(system_prompt: str, messages: list[dict[str, str]]) -> str:
     """Call Gemini with multi-turn conversation."""
     import google.generativeai as genai
+
+    if not GEMINI_API_KEY:
+        raise RuntimeError("No GEMINI_API_KEY configured in .env")
 
     genai.configure(api_key=GEMINI_API_KEY)
     model = genai.GenerativeModel(
@@ -161,23 +158,6 @@ def _call_gemini_agent(system_prompt: str, messages: list[dict[str, str]]) -> st
     chat = model.start_chat(history=history)
     response = chat.send_message(messages[-1]["content"])
     return response.text
-
-
-def _call_openai_agent(system_prompt: str, messages: list[dict[str, str]]) -> str:
-    """Call OpenAI with multi-turn conversation."""
-    from openai import OpenAI
-
-    client = OpenAI(api_key=OPENAI_API_KEY)
-    openai_messages = [{"role": "system", "content": system_prompt}]
-    for msg in messages:
-        openai_messages.append({"role": msg["role"], "content": msg["content"]})
-
-    response = client.chat.completions.create(
-        model=LLM_MODEL,
-        messages=openai_messages,
-        temperature=0.1,
-    )
-    return response.choices[0].message.content or ""
 
 
 def _parse_agent_response(raw: str) -> dict[str, Any]:

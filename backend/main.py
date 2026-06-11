@@ -31,7 +31,21 @@ class RAGSearchResponse(BaseModel):
     results: List[RAGChunk]
 
 
-app = FastAPI(title="Agentic CRM Intelligence Platform", version="0.1.0")
+app = FastAPI(
+    title="Agentic CRM Intelligence Platform",
+    description="""
+An autonomous AI-powered CRM email triage and resolution system.
+
+## Features
+* **Ingestion API**: Ingest emails asynchronously and queue for processing.
+* **Autonomous Agent**: ReAct loop powered by Gemini to triage, escalate, or auto-reply.
+* **RAG Knowledge Base**: Vector search for internal policies to ground agent actions.
+""",
+    version="1.0.0",
+    contact={
+        "name": "Sam",
+    },
+)
 
 app.add_middleware(
     CORSMiddleware,

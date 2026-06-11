@@ -28,7 +28,6 @@ load_dotenv()
 logger = logging.getLogger(__name__)
 
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
 LLM_MODEL = os.getenv("LLM_MODEL", "gemini-1.5-flash")
 
 # ---------------------------------------------------------------------------
@@ -219,6 +218,9 @@ def _call_gemini(system_prompt: str, user_prompt: str) -> str:
     """Call the Google Gemini API and return raw text response."""
     import google.generativeai as genai
 
+    if not GEMINI_API_KEY:
+        raise RuntimeError("No GEMINI_API_KEY configured in .env")
+
     genai.configure(api_key=GEMINI_API_KEY)
     model = genai.GenerativeModel(
         model_name=LLM_MODEL,
@@ -228,30 +230,9 @@ def _call_gemini(system_prompt: str, user_prompt: str) -> str:
     return response.text
 
 
-def _call_openai(system_prompt: str, user_prompt: str) -> str:
-    """Call the OpenAI API and return raw text response."""
-    from openai import OpenAI
-
-    client = OpenAI(api_key=OPENAI_API_KEY)
-    response = client.chat.completions.create(
-        model=LLM_MODEL,
-        messages=[
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": user_prompt},
-        ],
-        temperature=0.1,
-    )
-    return response.choices[0].message.content or ""
-
-
 def _call_llm(system_prompt: str, user_prompt: str) -> str:
-    """Route to the configured LLM provider."""
-    if GEMINI_API_KEY:
-        return _call_gemini(system_prompt, user_prompt)
-    elif OPENAI_API_KEY:
-        return _call_openai(system_prompt, user_prompt)
-    else:
-        raise RuntimeError("No LLM API key configured. Set GEMINI_API_KEY or OPENAI_API_KEY in .env")
+    """Call the configured LLM provider (Gemini)."""
+    return _call_gemini(system_prompt, user_prompt)
 
 
 # ---------------------------------------------------------------------------
