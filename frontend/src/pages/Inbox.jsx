@@ -5,7 +5,7 @@ import {
   getSortedRowModel,
   flexRender,
 } from '@tanstack/react-table'
-import { useEmails, useDashboardStats } from '../hooks/useApi.js'
+import { useEmails, useDashboardStats, updateEmail } from '../hooks/useApi.js'
 
 /* ------------------------------------------------------------------ */
 /* Badge helpers                                                       */
@@ -76,6 +76,29 @@ const STATUS_TABS = [
 
 function buildColumns(onSelectThread) {
   return [
+    {
+      id: 'select',
+      header: ({ table }) => (
+        <input
+          type="checkbox"
+          className="rounded border-slate-700 bg-slate-800 text-indigo-500 focus:ring-indigo-500/50"
+          checked={table.getIsAllRowsSelected()}
+          indeterminate={table.getIsSomeRowsSelected()}
+          onChange={table.getToggleAllRowsSelectedHandler()}
+        />
+      ),
+      cell: ({ row }) => (
+        <div className="px-1" onClick={(e) => e.stopPropagation()}>
+          <input
+            type="checkbox"
+            className="rounded border-slate-700 bg-slate-800 text-indigo-500 focus:ring-indigo-500/50"
+            checked={row.getIsSelected()}
+            disabled={!row.getCanSelect()}
+            onChange={row.getToggleSelectedHandler()}
+          />
+        </div>
+      ),
+    },
     {
       accessorKey: 'sender',
       header: 'Sender',
@@ -188,15 +211,53 @@ export default function Inbox({ onSelectThread }) {
 
   const columns = useMemo(() => buildColumns(onSelectThread), [onSelectThread])
 
+  const [rowSelection, setRowSelection] = useState({})
+  const [bulkLoading, setBulkLoading] = useState(false)
+
   const table = useReactTable({
     data: emails || [],
     columns,
-    state: { sorting },
+    state: { sorting, rowSelection },
     onSortingChange: setSorting,
+    onRowSelectionChange: setRowSelection,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
     manualSorting: true,
   })
+
+  const selectedRows = table.getSelectedRowModel().rows
+
+  const handleBulkEscalate = async () => {
+    if (selectedRows.length === 0) return
+    setBulkLoading(true)
+    try {
+      await Promise.all(selectedRows.map(row => 
+        updateEmail(row.original.id, { status: 'Escalated', requires_human: true, category: 'Escalated' })
+      ))
+      setRowSelection({})
+      handleRefresh()
+    } catch (e) {
+      alert("Failed to escalate emails: " + e.message)
+    } finally {
+      setBulkLoading(false)
+    }
+  }
+
+  const handleBulkSpam = async () => {
+    if (selectedRows.length === 0) return
+    setBulkLoading(true)
+    try {
+      await Promise.all(selectedRows.map(row => 
+        updateEmail(row.original.id, { status: 'Ignored', category: 'Spam' })
+      ))
+      setRowSelection({})
+      handleRefresh()
+    } catch (e) {
+      alert("Failed to mark as spam: " + e.message)
+    } finally {
+      setBulkLoading(false)
+    }
+  }
 
   const totalPages = Math.ceil((total || 0) / 50)
 
@@ -269,6 +330,38 @@ export default function Inbox({ onSelectThread }) {
           </div>
         </div>
       </div>
+
+      {/* Bulk Actions Toolbar */}
+      {selectedRows.length > 0 && (
+        <div className="mb-6 flex items-center justify-between rounded-xl border border-indigo-500/50 bg-indigo-900/30 p-4 shadow-lg backdrop-blur-md">
+          <span className="text-sm font-medium text-indigo-200">
+            {selectedRows.length} email{selectedRows.length !== 1 ? 's' : ''} selected
+          </span>
+          <div className="flex gap-3">
+            <button
+              onClick={handleBulkEscalate}
+              disabled={bulkLoading}
+              className="rounded-lg bg-red-600/80 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-500 disabled:opacity-50"
+            >
+              Bulk Escalate
+            </button>
+            <button
+              onClick={handleBulkSpam}
+              disabled={bulkLoading}
+              className="rounded-lg bg-slate-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-600 disabled:opacity-50"
+            >
+              Mark Spam
+            </button>
+            <button
+              onClick={() => setRowSelection({})}
+              disabled={bulkLoading}
+              className="rounded-lg border border-slate-600 px-4 py-2 text-sm font-medium text-slate-300 hover:bg-slate-800"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Error */}
       {error && (
