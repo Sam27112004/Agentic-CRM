@@ -146,20 +146,6 @@ export function useReputation(companyName) {
   return { data, loading }
 }
 
-export function useSentimentTrend() {
-  const [data, setData] = useState(null)
-  const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    fetch(`${API_BASE}/analytics/sentiment-trend`)
-      .then((res) => res.json())
-      .then(setData)
-      .catch(() => setData(null))
-      .finally(() => setLoading(false))
-  }, [])
-
-  return { data, loading }
-}
 
 export function useAtRiskAccounts() {
   const [data, setData] = useState(null)
