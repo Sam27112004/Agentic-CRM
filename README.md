@@ -894,6 +894,6 @@ Total retrieval latency: 39ms
 
 ## Demo
 
-See the Loom recording for a full walkthrough of the product showing email ingestion, agent logic, and the analytics dashboard:
+See the screen recording for a full walkthrough of the product showing email ingestion, agent logic, and the analytics dashboard:
 
-**[Link to Loom Recording]**
+**[Watch the Walkthrough Video](https://drive.google.com/file/d/10zmokj73v67NWY375xhEEkMdqcX5dSyD/view?usp=sharing)**
