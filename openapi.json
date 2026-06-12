@@ -2,6 +2,10 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Agentic CRM Intelligence Platform",
+    "description": "\nAn autonomous AI-powered CRM email triage and resolution system.\n\n## Features\n* **Ingestion API**: Ingest emails asynchronously and queue for processing.\n* **Autonomous Agent**: ReAct loop powered by Gemini to triage, escalate, or auto-reply.\n* **RAG Knowledge Base**: Vector search for internal policies to ground agent actions.\n",
+    "contact": {
+      "name": "Sam"
+    },
     "version": "1.0.0"
   },
   "paths": {
@@ -137,7 +141,23 @@
             }
           },
           {
-            "name": "sender",
+            "name": "requires_human",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Requires Human"
+            }
+          },
+          {
+            "name": "search",
             "in": "query",
             "required": false,
             "schema": {
@@ -149,7 +169,7 @@
                   "type": "null"
                 }
               ],
-              "title": "Sender"
+              "title": "Search"
             }
           },
           {
@@ -210,6 +230,53 @@
                   "additionalProperties": true,
                   "title": "Response List Emails Api Emails Get"
                 }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/emails/{email_id}": {
+      "patch": {
+        "summary": "Update Email",
+        "operationId": "update_email_api_emails__email_id__patch",
+        "parameters": [
+          {
+            "name": "email_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Email Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EmailUpdatePayload"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
               }
             }
           },
@@ -592,6 +659,54 @@
         }
       }
     },
+    "/analytics/at-risk-accounts": {
+      "get": {
+        "summary": "Get At Risk Accounts",
+        "operationId": "get_at_risk_accounts_analytics_at_risk_accounts_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/analytics/agent-metrics": {
+      "get": {
+        "summary": "Get Agent Metrics",
+        "operationId": "get_agent_metrics_analytics_agent_metrics_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/analytics/response-heatmap": {
+      "get": {
+        "summary": "Get Response Heatmap",
+        "operationId": "get_response_heatmap_analytics_response_heatmap_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
     "/intelligence/reputation": {
       "get": {
         "summary": "Get Intelligence Reputation",
@@ -787,6 +902,45 @@
           "content"
         ],
         "title": "DraftEditPayload"
+      },
+      "EmailUpdatePayload": {
+        "properties": {
+          "status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status"
+          },
+          "category": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category"
+          },
+          "requires_human": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Requires Human"
+          }
+        },
+        "type": "object",
+        "title": "EmailUpdatePayload"
       },
       "HTTPValidationError": {
         "properties": {

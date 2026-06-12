@@ -1,20 +1,26 @@
 erDiagram
-    CONTACT {
+    contacts ||--o{ threads : "sender_email"
+    threads ||--o{ emails : "id"
+    emails ||--o| processing_jobs : "id"
+    emails ||--o{ actions : "id"
+    emails ||--o{ drafts : "id"
+
+    contacts {
         int id PK
         string email UK
         string name
         string company
         string status
-        numeric account_value
-        numeric churn_risk_score
+        decimal account_value
+        decimal churn_risk_score
         datetime created_at
         datetime last_contact_at
     }
 
-    THREAD {
+    threads {
         int id PK
         string thread_id UK
-        string subject
+        text subject
         string sender_email FK
         datetime first_seen_at
         datetime last_updated_at
@@ -22,24 +28,33 @@ erDiagram
         string assigned_to
     }
 
-    EMAIL {
+    emails {
         int id PK
         int thread_id FK
         string message_id UK
         string sender
-        string subject
+        text subject
         text body
         datetime timestamp
-        numeric sentiment_score
+        decimal sentiment_score
         string category
         string urgency
         boolean requires_human
-        numeric confidence
+        decimal confidence
         jsonb raw_entities
         string status
     }
 
-    ACTION {
+    processing_jobs {
+        int id PK
+        int email_id FK
+        string status
+        text error_message
+        datetime created_at
+        datetime completed_at
+    }
+
+    actions {
         int id PK
         int email_id FK
         jsonb agent_reasoning_log
@@ -50,16 +65,33 @@ erDiagram
         datetime executed_at
     }
 
-    DRAFT {
+    drafts {
         int id PK
         int email_id FK
         text content
         string status
         datetime created_at
-        datetime updated_at
+        datetime approved_at
     }
 
-    AUDIT_LOG {
+    knowledge_chunks {
+        int id PK
+        string source_doc
+        text chunk_text
+        vector embedding "Vector Field"
+        datetime created_at
+    }
+
+    web_intelligence_cache {
+        int id PK
+        text source_url
+        string target_entity
+        jsonb scraped_data
+        datetime scraped_at
+        datetime expires_at
+    }
+
+    audit_log {
         int id PK
         string entity_type
         int entity_id
@@ -68,28 +100,3 @@ erDiagram
         datetime timestamp
         jsonb diff
     }
-
-    PROCESSING_JOB {
-        int id PK
-        int email_id FK
-        string status
-        string error_message
-        datetime created_at
-        datetime completed_at
-    }
-
-    WEB_INTELLIGENCE_CACHE {
-        int id PK
-        string source_url
-        string target_entity
-        jsonb scraped_data
-        datetime scraped_at
-        datetime expires_at
-    }
-
-    %% Relationships
-    CONTACT ||--o{ THREAD : "has"
-    THREAD ||--o{ EMAIL : "contains"
-    EMAIL ||--o{ ACTION : "generates"
-    EMAIL ||--o{ DRAFT : "has"
-    EMAIL ||--o{ PROCESSING_JOB : "processed_by"
