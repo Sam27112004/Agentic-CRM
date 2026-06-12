@@ -19,21 +19,21 @@ flowchart TD
     classDef db fill:#f59e0b,stroke:#d97706,stroke-width:2px,color:#fff,rx:8,ry:8
     classDef ext fill:#475569,stroke:#334155,stroke-width:2px,color:#fff,rx:8,ry:8
 
-    subgraph Client["💻 Presentation Layer (React + Vite)"]
+    subgraph Client["Presentation Layer (React + Vite)"]
         direction LR
         Inbox["Inbox Dashboard"]:::ui
         Workspace["Thread Workspace"]:::ui
         Analytics["Analytics Engine"]:::ui
     end
 
-    subgraph API["⚙️ Backend Services (FastAPI)"]
+    subgraph API["Backend Services (FastAPI)"]
         direction LR
         Endpoints["REST Endpoints"]:::api
         Ingest["Email Ingestion"]:::api
         JobProc["Job Orchestrator"]:::api
     end
 
-    subgraph Intelligence["🧠 Cognitive Engine (Multi-Layer)"]
+    subgraph Intelligence["Cognitive Engine (Multi-Layer)"]
         direction LR
         Heuristics["L1: Heuristics Filter"]:::ai
         LLMClass["L2: LLM Classifier"]:::ai
@@ -42,13 +42,13 @@ flowchart TD
         WebScraper["L5: Web Intel Scraper"]:::ai
     end
 
-    subgraph Storage["🗄️ Persistence Layer"]
+    subgraph Storage["Persistence Layer"]
         direction LR
         Postgres[("PostgreSQL\n(Relational)")]:::db
         Chroma[("ChromaDB\n(Vector)")]:::db
     end
 
-    External["📧 External Emails"]:::ext
+    External["External Emails"]:::ext
 
     %% Connect layers
     Client <==>|"HTTP/REST"| Endpoints
