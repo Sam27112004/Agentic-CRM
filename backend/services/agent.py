@@ -61,6 +61,7 @@ Rules:
 - NEVER draft a reply to emails with urgency=Critical, category=Legal/Security/Spam, or confidence < 0.70.
 - For those cases, always escalate_to_human or flag_for_legal.
 - For standard Inquiries, Bug Reports, and Feature Requests, you SHOULD use the draft_reply tool.
+- If a customer threatens to post publicly, leave a bad review, or mentions Trustpilot/G2/Twitter, ALWAYS use the scrape_public_sentiment tool to check company reputation BEFORE drafting a reply or escalating.
 - When drafting replies, cite specific policy documents from search_knowledge_base results.
 - Be empathetic but never admit legal liability.
 
@@ -166,6 +167,24 @@ def _call_gemini_agent(system_prompt: str, messages: list[dict[str, str]]) -> st
                 config=types.GenerateContentConfig(
                     system_instruction=system_prompt,
                     temperature=0.1,
+                    safety_settings=[
+                        types.SafetySetting(
+                            category=types.HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,
+                            threshold=types.HarmBlockThreshold.BLOCK_NONE,
+                        ),
+                        types.SafetySetting(
+                            category=types.HarmCategory.HARM_CATEGORY_HARASSMENT,
+                            threshold=types.HarmBlockThreshold.BLOCK_NONE,
+                        ),
+                        types.SafetySetting(
+                            category=types.HarmCategory.HARM_CATEGORY_HATE_SPEECH,
+                            threshold=types.HarmBlockThreshold.BLOCK_NONE,
+                        ),
+                        types.SafetySetting(
+                            category=types.HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
+                            threshold=types.HarmBlockThreshold.BLOCK_NONE,
+                        ),
+                    ]
                 ),
                 history=history
             )
@@ -173,7 +192,7 @@ def _call_gemini_agent(system_prompt: str, messages: list[dict[str, str]]) -> st
             if response.text:
                 return response.text
             else:
-                logger.warning(f"Gemini API returned empty text on attempt {attempt + 1}")
+                logger.warning(f"Gemini API returned empty text on attempt {attempt + 1}. Response: {response}")
         except Exception as e:
             logger.warning(f"Gemini API error on attempt {attempt + 1}: {e}")
         
@@ -389,7 +408,7 @@ def run_agent(
             "input": action_input,
         }
 
-        if is_final or action_name == "finish":
+        if action_name == "finish":
             step_record["observation"] = "Agent decided to finish."
             reasoning_log.append(step_record)
             break
@@ -398,6 +417,9 @@ def run_agent(
         observation = _execute_tool(db, action_name, action_input, email_id, dry_run)
         step_record["observation"] = observation
         reasoning_log.append(step_record)
+
+        if is_final:
+            break
 
         # Feed observation back to LLM
         observation_text = json.dumps(observation, default=str)
