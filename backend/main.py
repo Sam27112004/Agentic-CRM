@@ -116,13 +116,14 @@ def list_emails(
     category: Optional[str] = None,
     urgency: Optional[str] = None,
     requires_human: Optional[bool] = None,
-    sender: Optional[str] = None,
+    search: Optional[str] = None,
     sort_by: str = Query("timestamp", description="Sort field: timestamp, category, urgency, sentiment_score"),
     sort_dir: str = Query("desc", description="Sort direction: asc or desc"),
     page: int = Query(1, ge=1),
     page_size: int = Query(50, ge=1, le=200),
 ) -> dict[str, Any]:
     """List emails with filtering, sorting, and pagination."""
+    from sqlalchemy import or_
     query = select(Email)
 
     if status_filter:
@@ -133,8 +134,14 @@ def list_emails(
         query = query.where(Email.urgency == urgency)
     if requires_human is not None:
         query = query.where(Email.requires_human == requires_human)
-    if sender:
-        query = query.where(Email.sender.ilike(f"%{sender}%"))
+    if search:
+        query = query.where(
+            or_(
+                Email.sender.ilike(f"%{search}%"),
+                Email.subject.ilike(f"%{search}%"),
+                Email.body.ilike(f"%{search}%")
+            )
+        )
 
     # Count
     count_query = select(func.count()).select_from(query.subquery())
@@ -176,6 +183,27 @@ def list_emails(
             for e in emails
         ],
     }
+
+class EmailUpdatePayload(BaseModel):
+    status: Optional[str] = None
+    category: Optional[str] = None
+    requires_human: Optional[bool] = None
+
+@app.patch("/api/emails/{email_id}")
+def update_email(email_id: int, payload: EmailUpdatePayload, db: Session = Depends(get_db)):
+    email = db.get(Email, email_id)
+    if not email:
+        raise HTTPException(status_code=404, detail="Email not found")
+    
+    if payload.status is not None:
+        email.status = payload.status
+    if payload.category is not None:
+        email.category = payload.category
+    if payload.requires_human is not None:
+        email.requires_human = payload.requires_human
+        
+    db.commit()
+    return {"status": "success"}
 
 
 # ---------------------------------------------------------------------------
@@ -427,6 +455,78 @@ def get_category_breakdown(days: int = 30, db: Session = Depends(get_db)):
     query = select(Email.category, func.count(Email.id).label("count")).group_by(Email.category)
     results = db.execute(query).all()
     return [{"category": r.category or "Unknown", "count": r.count} for r in results]
+
+@app.get("/analytics/at-risk-accounts")
+def get_at_risk_accounts(db: Session = Depends(get_db)):
+    accounts = db.scalars(
+        select(Contact).where(Contact.churn_risk_score >= 0.2).order_by(Contact.churn_risk_score.desc()).limit(10)
+    ).all()
+    return [
+        {
+            "email": a.email,
+            "name": a.name,
+            "company": a.company,
+            "account_value": float(a.account_value) if a.account_value else 0,
+            "churn_risk_score": float(a.churn_risk_score) if a.churn_risk_score else 0,
+        } for a in accounts
+    ]
+
+@app.get("/analytics/agent-metrics")
+def get_agent_metrics(db: Session = Depends(get_db)):
+    actions = db.scalars(select(Action).where(Action.action_type == "Agent-Triage")).all()
+    total_runs = len(actions)
+    avg_steps = 0
+    if total_runs > 0:
+        steps = []
+        for a in actions:
+            if a.agent_reasoning_log:
+                steps.append(len(a.agent_reasoning_log))
+        if steps:
+            avg_steps = sum(steps) / len(steps)
+            
+    replied = db.scalar(select(func.count(Email.id)).where(Email.status == "Replied")) or 0
+    escalated = db.scalar(select(func.count(Email.id)).where(Email.status == "Escalated")) or 0
+    total = replied + escalated
+    escalation_rate = (escalated / total) * 100 if total > 0 else 0
+    
+    return {
+        "total_agent_runs": total_runs,
+        "avg_reasoning_steps": round(avg_steps, 2),
+        "escalation_rate": round(escalation_rate, 2),
+        "automated_replies": replied
+    }
+
+@app.get("/analytics/response-heatmap")
+def get_response_heatmap(db: Session = Depends(get_db)):
+    # Simple mock or real implementation: count emails by day of week and hour of day
+    from sqlalchemy import extract
+    
+    query = select(
+        extract('isodow', Email.timestamp).label('dow'),
+        extract('hour', Email.timestamp).label('hour'),
+        func.count(Email.id).label('count')
+    ).group_by('dow', 'hour')
+    
+    results = db.execute(query).all()
+    
+    heatmap = []
+    days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+    
+    # Initialize empty heatmap
+    for d in range(1, 8):
+        for h in range(24):
+            heatmap.append({"day": days[d-1], "hour": h, "count": 0})
+            
+    for r in results:
+        day_idx = int(r.dow) - 1
+        hour = int(r.hour)
+        if 0 <= day_idx < 7 and 0 <= hour < 24:
+            for item in heatmap:
+                if item["day"] == days[day_idx] and item["hour"] == hour:
+                    item["count"] = r.count
+                    break
+                    
+    return heatmap
 
 
 @app.get("/intelligence/reputation")

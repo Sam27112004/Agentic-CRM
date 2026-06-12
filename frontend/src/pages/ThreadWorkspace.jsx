@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react'
-import { useThread, useRagSearch } from '../hooks/useApi.js'
+import { useThread, useRagSearch, updateEmail } from '../hooks/useApi.js'
 
 /* ------------------------------------------------------------------ */
 /* Helper Components                                                   */
@@ -315,10 +315,32 @@ export default function ThreadWorkspace({ contactEmail, onBack }) {
               <div className="mb-8">
                 <h2 className="text-2xl font-bold text-white mb-4">{selectedEmail.subject}</h2>
                 <div className="flex items-center justify-between text-sm text-slate-400 mb-6 pb-4 border-b border-slate-800">
-                  <div>
-                    <span className="font-medium text-slate-300">From:</span> {selectedEmail.sender}
+                  <div className="flex flex-col gap-2">
+                    <div>
+                      <span className="font-medium text-slate-300">From:</span> {selectedEmail.sender}
+                    </div>
+                    <div>{new Date(selectedEmail.timestamp).toLocaleString()}</div>
                   </div>
-                  <div>{new Date(selectedEmail.timestamp).toLocaleString()}</div>
+                  <div className="flex items-center gap-3">
+                    <button 
+                      onClick={async () => {
+                        await updateEmail(selectedEmail.id, { status: 'Escalated', requires_human: true, category: 'Escalated' })
+                        refetch()
+                      }}
+                      className="rounded-md border border-red-500/50 bg-red-900/30 px-3 py-1.5 text-xs font-semibold text-red-300 hover:bg-red-800/50 transition-colors"
+                    >
+                      Escalate
+                    </button>
+                    <button 
+                      onClick={async () => {
+                        await updateEmail(selectedEmail.id, { status: 'Ignored', category: 'Spam' })
+                        refetch()
+                      }}
+                      className="rounded-md border border-slate-600 bg-slate-800 px-3 py-1.5 text-xs font-semibold text-slate-300 hover:bg-slate-700 transition-colors"
+                    >
+                      Mark Spam
+                    </button>
+                  </div>
                 </div>
                 <div className="whitespace-pre-wrap text-slate-300 font-sans leading-relaxed">
                   {selectedEmail.body}

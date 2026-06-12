@@ -14,7 +14,7 @@ import {
   LineChart,
   Line
 } from 'recharts'
-import { useDashboardStats, useSentimentTrend } from '../hooks/useApi.js'
+import { useDashboardStats, useSentimentTrend, useAgentMetrics, useAtRiskAccounts, useResponseHeatmap } from '../hooks/useApi.js'
 
 /* ------------------------------------------------------------------ */
 /* Color Maps                                                          */
@@ -68,6 +68,9 @@ const CustomTooltip = ({ active, payload, label }) => {
 export default function Analytics() {
   const { stats, loading } = useDashboardStats()
   const { data: sentimentData, loading: sentimentLoading } = useSentimentTrend()
+  const { data: agentMetrics, loading: agentLoading } = useAgentMetrics()
+  const { data: atRiskAccounts, loading: riskLoading } = useAtRiskAccounts()
+  const { data: heatmapData, loading: heatmapLoading } = useResponseHeatmap()
 
   // Format data for Recharts
   const categoryData = useMemo(() => {
@@ -237,6 +240,101 @@ export default function Analytics() {
             <div className="flex h-full items-center justify-center text-slate-500">No sentiment data available</div>
           )}
         </div>
+      </div>
+
+      {/* Agent Performance Metrics & Heatmap */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+        
+        {/* Agent Metrics */}
+        <div className="rounded-xl border border-slate-800 bg-slate-900/40 p-6">
+          <h3 className="text-lg font-semibold text-white mb-6">Agent Performance</h3>
+          {agentLoading ? (
+            <div className="text-slate-500">Loading metrics...</div>
+          ) : agentMetrics ? (
+            <div className="grid grid-cols-2 gap-4">
+              <div className="bg-slate-800/50 p-4 rounded-lg border border-slate-700/50">
+                <p className="text-sm text-slate-400 mb-1">Total Agent Runs</p>
+                <p className="text-2xl font-bold text-white">{agentMetrics.total_agent_runs}</p>
+              </div>
+              <div className="bg-slate-800/50 p-4 rounded-lg border border-slate-700/50">
+                <p className="text-sm text-slate-400 mb-1">Avg. Reasoning Steps</p>
+                <p className="text-2xl font-bold text-white">{agentMetrics.avg_reasoning_steps}</p>
+              </div>
+              <div className="bg-slate-800/50 p-4 rounded-lg border border-slate-700/50">
+                <p className="text-sm text-slate-400 mb-1">Escalation Rate</p>
+                <p className="text-2xl font-bold text-white">{agentMetrics.escalation_rate}%</p>
+              </div>
+              <div className="bg-slate-800/50 p-4 rounded-lg border border-slate-700/50">
+                <p className="text-sm text-slate-400 mb-1">Automated Replies</p>
+                <p className="text-2xl font-bold text-white">{agentMetrics.automated_replies}</p>
+              </div>
+            </div>
+          ) : (
+             <div className="text-slate-500">No agent metrics available</div>
+          )}
+        </div>
+
+        {/* Heatmap (Represented as Bar Chart) */}
+        <div className="rounded-xl border border-slate-800 bg-slate-900/40 p-6">
+          <h3 className="text-lg font-semibold text-white mb-6">Response Time Activity (Hour of Day)</h3>
+          <div className="h-48 w-full">
+            {heatmapLoading ? (
+              <div className="text-slate-500 flex h-full items-center justify-center">Loading...</div>
+            ) : heatmapData && heatmapData.length > 0 ? (
+               <ResponsiveContainer width="100%" height="100%">
+                 <BarChart data={heatmapData.filter(d => d.count > 0).slice(0, 24)}>
+                   <CartesianGrid strokeDasharray="3 3" stroke="#334155" vertical={false} />
+                   <XAxis dataKey="hour" stroke="#94a3b8" fontSize={12} tickFormatter={h => `${h}:00`} />
+                   <YAxis stroke="#94a3b8" fontSize={12} />
+                   <Tooltip content={<CustomTooltip />} />
+                   <Bar dataKey="count" fill="#14b8a6" radius={[4, 4, 0, 0]} />
+                 </BarChart>
+               </ResponsiveContainer>
+            ) : (
+               <div className="text-slate-500 flex h-full items-center justify-center">No activity data</div>
+            )}
+          </div>
+        </div>
+
+      </div>
+
+      {/* At-Risk Accounts */}
+      <div className="rounded-xl border border-slate-800 bg-slate-900/40 p-6 mt-6 overflow-hidden">
+        <h3 className="text-lg font-semibold text-red-400 mb-4 flex items-center gap-2">
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+            <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+          </svg>
+          At-Risk Accounts
+        </h3>
+        {riskLoading ? (
+          <div className="text-slate-500 py-4">Loading accounts...</div>
+        ) : atRiskAccounts && atRiskAccounts.length > 0 ? (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-sm text-slate-300">
+              <thead className="text-xs uppercase text-slate-500 bg-slate-800/50">
+                <tr>
+                  <th className="px-4 py-3">Company / Contact</th>
+                  <th className="px-4 py-3">Account Value</th>
+                  <th className="px-4 py-3">Churn Risk Score</th>
+                </tr>
+              </thead>
+              <tbody>
+                {atRiskAccounts.map((account, idx) => (
+                  <tr key={idx} className="border-b border-slate-800 hover:bg-slate-800/30">
+                    <td className="px-4 py-3">
+                      <div className="font-semibold text-white">{account.company}</div>
+                      <div className="text-slate-500 text-xs">{account.name} ({account.email})</div>
+                    </td>
+                    <td className="px-4 py-3 text-green-400 font-mono">${account.account_value.toLocaleString()}</td>
+                    <td className="px-4 py-3 text-red-400 font-bold">{account.churn_risk_score.toFixed(2)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <div className="text-slate-500 py-4">No at-risk accounts found.</div>
+        )}
       </div>
     </div>
   )

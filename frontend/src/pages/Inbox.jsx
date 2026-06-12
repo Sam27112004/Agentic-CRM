@@ -162,7 +162,7 @@ function StatsBar({ stats }) {
 export default function Inbox({ onSelectThread }) {
   const [statusFilter, setStatusFilter] = useState(null)
   const [categoryFilter, setCategoryFilter] = useState('')
-  const [senderSearch, setSenderSearch] = useState('')
+  const [searchQuery, setSearchQuery] = useState('')
   const [page, setPage] = useState(1)
   const [sorting, setSorting] = useState([{ id: 'timestamp', desc: true }])
 
@@ -173,9 +173,9 @@ export default function Inbox({ onSelectThread }) {
     } else if (statusFilter) {
       filters.status = statusFilter
     }
-    if (senderSearch) filters.sender = senderSearch
+    if (searchQuery) filters.search = searchQuery
     return filters
-  }, [statusFilter, categoryFilter, senderSearch, sorting, page])
+  }, [statusFilter, categoryFilter, searchQuery, sorting, page])
 
   const { emails, total, loading, error, refetch } = useEmails(activeFilters)
   const { stats, refetchStats } = useDashboardStats()
@@ -260,9 +260,9 @@ export default function Inbox({ onSelectThread }) {
             </svg>
             <input
               type="text"
-              placeholder="Search senders..."
-              value={senderSearch}
-              onChange={(e) => { setSenderSearch(e.target.value); setPage(1) }}
+              placeholder="Search emails..."
+              value={searchQuery}
+              onChange={(e) => { setSearchQuery(e.target.value); setPage(1) }}
               className="w-full sm:w-64 rounded-lg border border-slate-700/50 bg-slate-800/80 pl-10 pr-4 py-2.5 text-sm font-medium text-slate-300 placeholder-slate-500 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition-all shadow-inner"
             />
           </div>

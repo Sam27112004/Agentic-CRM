@@ -16,7 +16,7 @@ export function useEmails(filters = {}) {
       if (filters.category) params.set('category', filters.category)
       if (filters.urgency) params.set('urgency', filters.urgency)
       if (filters.requires_human) params.set('requires_human', 'true')
-      if (filters.sender) params.set('sender', filters.sender)
+      if (filters.search) params.set('search', filters.search)
       if (filters.sort_by) params.set('sort_by', filters.sort_by)
       if (filters.sort_dir) params.set('sort_dir', filters.sort_dir)
       if (filters.page) params.set('page', String(filters.page))
@@ -144,6 +144,78 @@ export function useReputation(companyName) {
   }, [companyName])
 
   return { data, loading }
+}
+
+export function useSentimentTrend() {
+  const [data, setData] = useState(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    fetch(`${API_BASE}/analytics/sentiment-trend`)
+      .then((res) => res.json())
+      .then(setData)
+      .catch(() => setData(null))
+      .finally(() => setLoading(false))
+  }, [])
+
+  return { data, loading }
+}
+
+export function useAtRiskAccounts() {
+  const [data, setData] = useState(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    fetch(`${API_BASE}/analytics/at-risk-accounts`)
+      .then((res) => res.json())
+      .then(setData)
+      .catch(() => setData([]))
+      .finally(() => setLoading(false))
+  }, [])
+
+  return { data, loading }
+}
+
+export function useAgentMetrics() {
+  const [data, setData] = useState(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    fetch(`${API_BASE}/analytics/agent-metrics`)
+      .then((res) => res.json())
+      .then(setData)
+      .catch(() => setData(null))
+      .finally(() => setLoading(false))
+  }, [])
+
+  return { data, loading }
+}
+
+export function useResponseHeatmap() {
+  const [data, setData] = useState(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    fetch(`${API_BASE}/analytics/response-heatmap`)
+      .then((res) => res.json())
+      .then(setData)
+      .catch(() => setData([]))
+      .finally(() => setLoading(false))
+  }, [])
+
+  return { data, loading }
+}
+
+export async function updateEmail(emailId, payload) {
+  const res = await fetch(`${API_BASE}/api/emails/${emailId}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  })
+  if (!res.ok) {
+    throw new Error('Failed to update email')
+  }
+  return res.json()
 }
 
 export function useRagSearch(query) {
