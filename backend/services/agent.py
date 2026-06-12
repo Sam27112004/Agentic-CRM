@@ -58,8 +58,9 @@ Available tools:
 
 Rules:
 - You have a maximum of {max_steps} steps. Use them wisely.
-- NEVER auto-reply to emails with urgency=Critical, category=Legal/Security/Spam, or confidence < 0.70.
+- NEVER draft a reply to emails with urgency=Critical, category=Legal/Security/Spam, or confidence < 0.70.
 - For those cases, always escalate_to_human or flag_for_legal.
+- For standard Inquiries, Bug Reports, and Feature Requests, you SHOULD use the draft_reply tool.
 - When drafting replies, cite specific policy documents from search_knowledge_base results.
 - Be empathetic but never admit legal liability.
 
@@ -155,37 +156,57 @@ def _call_gemini_agent(system_prompt: str, messages: list[dict[str, str]]) -> st
             types.Content(role=role, parts=[types.Part.from_text(text=msg["content"])])
         )
 
-    try:
-        chat = client.chats.create(
-            model=LLM_MODEL,
-            config=types.GenerateContentConfig(
-                system_instruction=system_prompt,
-                temperature=0.1,
-            ),
-            history=history
-        )
-        response = chat.send_message(messages[-1]["content"])
-        return response.text
-    except Exception as e:
-        logger.warning(f"Gemini API blocked in agent. Using Mock response. Error: {e}")
-        # Very simple fallback for the agent loop to prevent crashes
-        last_msg = messages[-1]["content"]
-        if "Observation" in last_msg:
-            return json.dumps({
-                "thought": "I have completed my investigation.",
-                "action": "draft_reply",
-                "input": {"email_id": 1, "suggested_content": "Thank you for reaching out. We will process your request."}
-            })
-        else:
-            return json.dumps({
-                "thought": "I need to check the thread history.",
-                "action": "get_thread_history",
-                "input": {"sender_email": "mock@example.com"}
-            })
+    import time
+    
+    max_retries = 3
+    for attempt in range(max_retries):
+        try:
+            chat = client.chats.create(
+                model=LLM_MODEL,
+                config=types.GenerateContentConfig(
+                    system_instruction=system_prompt,
+                    temperature=0.1,
+                ),
+                history=history
+            )
+            response = chat.send_message(messages[-1]["content"])
+            if response.text:
+                return response.text
+            else:
+                logger.warning(f"Gemini API returned empty text on attempt {attempt + 1}")
+        except Exception as e:
+            logger.warning(f"Gemini API error on attempt {attempt + 1}: {e}")
+        
+        # If we failed or got empty text, wait a bit before retrying
+        time.sleep(2)
+
+    logger.warning("Gemini API blocked or returned empty text after all retries. Using Mock response.")
+    # Very simple fallback for the agent loop to prevent crashes
+    last_msg = messages[-1]["content"]
+    if "Observation" in last_msg:
+        return json.dumps({
+            "thought": "I have completed my investigation.",
+            "action": "draft_reply",
+            "action_input": {"email_id": 1, "suggested_content": "Thank you for reaching out. We will process your request."}
+        })
+    else:
+        return json.dumps({
+            "thought": "I need to check the thread history.",
+            "action": "get_thread_history",
+            "action_input": {"sender_email": "mock@example.com"}
+        })
 
 
-def _parse_agent_response(raw: str) -> dict[str, Any]:
-    """Parse agent JSON response, handling code fences."""
+def _parse_agent_response(raw: str | None) -> dict[str, Any]:
+    """Parse the JSON output from the agent."""
+    if not raw:
+        return {
+            "thought": "Empty response from LLM",
+            "action": "escalate_to_human",
+            "action_input": {"reason": "LLM returned empty response"},
+            "is_final": True
+        }
+    
     cleaned = raw.strip()
     if cleaned.startswith("```"):
         lines = cleaned.split("\n")
@@ -344,7 +365,7 @@ def run_agent(
     ]
 
     if blocked:
-        messages[0]["content"] += f"\n\nIMPORTANT: {block_reason}. You MUST escalate to human or flag for legal. Do NOT draft an auto-reply."
+        messages[0]["content"] += f"\n\nIMPORTANT: {block_reason}. You MUST escalate to human or flag for legal. Do NOT draft a reply."
 
     # --- ReAct Loop ---
     reasoning_log: list[dict[str, Any]] = []
