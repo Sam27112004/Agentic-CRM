@@ -41,7 +41,8 @@ export function useDashboardStats() {
   const [stats, setStats] = useState(null)
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
+  const fetchStats = useCallback(() => {
+    setLoading(true)
     fetch(`${API_BASE}/dashboard/stats`)
       .then((res) => res.json())
       .then(setStats)
@@ -49,7 +50,11 @@ export function useDashboardStats() {
       .finally(() => setLoading(false))
   }, [])
 
-  return { stats, loading }
+  useEffect(() => {
+    fetchStats()
+  }, [fetchStats])
+
+  return { stats, loading, refetchStats: fetchStats }
 }
 
 export function useThread(contactEmail) {

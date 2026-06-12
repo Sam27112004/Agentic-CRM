@@ -359,7 +359,7 @@ def send_response(email_id: int, payload: RespondPayload, db: Session = Depends(
     email.status = "Replied"
     action = Action(
         email_id=email_id,
-        action_type="Manual-Reply",
+        action_type="Replied",
         proposed_content=payload.content,
         is_approved=True,
     )
@@ -392,7 +392,7 @@ def approve_draft(id: int, db: Session = Depends(get_db)):
     
     action = Action(
         email_id=email.id,
-        action_type="Auto-Reply",
+        action_type="Replied",
         proposed_content=draft.content,
         is_approved=True,
     )

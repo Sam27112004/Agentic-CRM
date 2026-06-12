@@ -327,7 +327,7 @@ export default function ThreadWorkspace({ contactEmail, onBack }) {
               </div>
 
               {/* Non-triage Actions (e.g. Escalate, Ticket, Legal) */}
-              {emailActions.filter(a => a.action_type !== 'Agent-Triage').map(action => (
+              {emailActions.filter(a => !['Agent-Triage', 'Auto-Reply', 'Manual-Reply', 'Replied'].includes(a.action_type)).map(action => (
                 <div key={action.id} className="mb-6 p-4 rounded-lg border border-orange-900/50 bg-orange-950/20">
                   <h4 className="text-sm font-semibold text-orange-400 uppercase tracking-wider mb-2">
                     Action Taken: {action.action_type}

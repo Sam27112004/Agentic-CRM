@@ -10,7 +10,7 @@ def reset_inbox():
     try:
         print("Clearing inbox data (emails, threads, actions, drafts, jobs, audit_log)...")
         # Use TRUNCATE CASCADE to efficiently clear out the tables while handling foreign keys
-        db.execute(text("TRUNCATE emails, threads, actions, drafts, processing_jobs, audit_log CASCADE;"))
+        db.execute(text("TRUNCATE emails, threads, actions, drafts, processing_jobs, audit_log RESTART IDENTITY CASCADE;"))
         db.commit()
         print("Inbox reset successful! Your contacts and knowledge base chunks are still intact.")
     except Exception as e:

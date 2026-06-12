@@ -138,7 +138,7 @@ function StatsBar({ stats }) {
     { label: 'Total Ingested', value: stats.total_emails, color: 'text-white', glow: 'shadow-[0_0_15px_rgba(255,255,255,0.1)]' },
     { label: 'Pending Triage', value: stats.by_status?.Received || 0, color: 'text-indigo-400', glow: 'shadow-[0_0_15px_rgba(129,140,248,0.2)]' },
     { label: 'Needs Escalation', value: stats.by_status?.Escalated || 0, color: 'text-red-400', glow: 'shadow-[0_0_15px_rgba(248,113,113,0.2)]' },
-    { label: 'Auto-Replied', value: stats.by_status?.Replied || 0, color: 'text-emerald-400', glow: 'shadow-[0_0_15px_rgba(52,211,153,0.2)]' },
+    { label: 'Replied', value: stats.by_status?.Replied || 0, color: 'text-emerald-400', glow: 'shadow-[0_0_15px_rgba(52,211,153,0.2)]' },
     { label: 'Spam / Ignored', value: stats.by_status?.Ignored || 0, color: 'text-slate-400', glow: 'shadow-[0_0_15px_rgba(148,163,184,0.1)]' },
   ]
   return (
@@ -176,7 +176,12 @@ export default function Inbox({ onSelectThread }) {
   }), [statusFilter, categoryFilter, senderSearch, sorting, page])
 
   const { emails, total, loading, error, refetch } = useEmails(filters)
-  const { stats } = useDashboardStats()
+  const { stats, refetchStats } = useDashboardStats()
+
+  const handleRefresh = () => {
+    refetch()
+    refetchStats()
+  }
 
   const columns = useMemo(() => buildColumns(onSelectThread), [onSelectThread])
 
@@ -202,7 +207,7 @@ export default function Inbox({ onSelectThread }) {
           <p className="text-sm text-slate-400 mt-1">Real-time email triage and automated response monitoring.</p>
         </div>
         <button
-          onClick={refetch}
+          onClick={handleRefresh}
           className="rounded-lg bg-indigo-600/20 ring-1 ring-indigo-500/50 px-4 py-2 text-sm font-semibold text-indigo-300 hover:bg-indigo-600 hover:text-white transition-all shadow-[0_0_15px_rgba(79,70,229,0.3)] flex items-center gap-2 group"
         >
           <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 group-hover:rotate-180 transition-transform duration-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">

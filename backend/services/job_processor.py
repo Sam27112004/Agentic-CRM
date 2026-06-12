@@ -57,7 +57,21 @@ class JobProcessor:
                 email.category = "Internal"
             else:
                 # --- Layer 2: LLM classification for non-trivial emails ---
-                email.category = self._run_llm_classification(email)
+                llm_result = self._run_llm_classification(email)
+                if llm_result:
+                    email.category = llm_result.category
+                    email.sentiment_score = llm_result.sentiment_score
+                    email.urgency = llm_result.urgency
+                    email.requires_human = llm_result.requires_human
+                    email.confidence = llm_result.confidence
+                    email.raw_entities = llm_result.detected_entities.model_dump() if hasattr(llm_result.detected_entities, "model_dump") else {}
+                    
+                    if llm_result.suggested_reply:
+                        from backend.models.draft import Draft
+                        draft = Draft(email_id=email.id, content=llm_result.suggested_reply)
+                        self.db.add(draft)
+                else:
+                    email.category = "Pending"
 
             job.status = "Completed"
             job.completed_at = datetime.utcnow()
@@ -82,20 +96,20 @@ class JobProcessor:
                 "error": str(exc),
             }
 
-    def _run_llm_classification(self, email: Email) -> str:
-        """Attempt LLM classification; fall back to 'Pending' on failure."""
+    def _run_llm_classification(self, email: Email) -> Any:
+        """Attempt LLM classification; returns the full result."""
         try:
             from backend.services.llm_classifier import classify_email
 
             result = classify_email(db=self.db, email_id=email.id)
-            return result.category
+            return result
         except Exception as exc:
             logger.warning(
                 "LLM classification failed for email %d, keeping Pending: %s",
                 email.id,
                 exc,
             )
-            return "Pending"
+            return None
 
     def get_pending_jobs(self, limit: int = 10) -> list[dict[str, Any]]:
         """Retrieve jobs still in Queued state."""
