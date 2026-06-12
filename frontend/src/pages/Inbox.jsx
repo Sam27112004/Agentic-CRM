@@ -408,7 +408,7 @@ export default function Inbox({ onSelectThread }) {
               table.getRowModel().rows.map((row) => (
                 <tr
                   key={row.id}
-                  onClick={() => onSelectThread?.(row.original.sender)}
+                  onClick={() => onSelectThread?.(row.original)}
                   className="group cursor-pointer border-b border-slate-800/50 transition-all duration-200 hover:bg-indigo-900/10 hover:shadow-[inset_0_1px_0_0_rgba(99,102,241,0.1),inset_0_-1px_0_0_rgba(99,102,241,0.1)]"
                 >
                   {row.getVisibleCells().map((cell) => (

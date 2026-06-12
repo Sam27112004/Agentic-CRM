@@ -11,20 +11,25 @@ const NAV_ITEMS = [
 export default function App() {
   const [page, setPage] = useState('inbox')
   const [selectedThread, setSelectedThread] = useState(null)
+  const [initialEmailId, setInitialEmailId] = useState(null)
 
   // Simple hash-based routing
   useEffect(() => {
     const handleHash = () => {
       const hash = window.location.hash.slice(1)
       if (hash.startsWith('thread/')) {
-        setSelectedThread(hash.replace('thread/', ''))
+        const parts = hash.replace('thread/', '').split('/')
+        setSelectedThread(decodeURIComponent(parts[0]))
+        setInitialEmailId(parts[1] ? parseInt(parts[1], 10) : null)
         setPage('thread')
       } else if (hash === 'analytics') {
         setPage('analytics')
         setSelectedThread(null)
+        setInitialEmailId(null)
       } else {
         setPage('inbox')
         setSelectedThread(null)
+        setInitialEmailId(null)
       }
     }
     handleHash()
@@ -74,10 +79,11 @@ export default function App() {
 
       {/* Main Content */}
       <main className="mx-auto max-w-screen-2xl px-6 py-6">
-        {page === 'inbox' && <Inbox onSelectThread={(email) => navigate(`thread/${email}`)} />}
+        {page === 'inbox' && <Inbox onSelectThread={(email) => navigate(`thread/${encodeURIComponent(email.sender)}/${email.id}`)} />}
         {page === 'thread' && (
           <ThreadWorkspace
             contactEmail={selectedThread}
+            initialEmailId={initialEmailId}
             onBack={() => navigate('inbox')}
           />
         )}

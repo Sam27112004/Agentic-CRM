@@ -238,20 +238,25 @@ function DraftViewer({ draft, onRefetch }) {
 /* Main Component                                                      */
 /* ------------------------------------------------------------------ */
 
-export default function ThreadWorkspace({ contactEmail, onBack }) {
+export default function ThreadWorkspace({ contactEmail, initialEmailId, onBack }) {
   const { data, loading, error, refetch } = useThread(contactEmail)
-  const [selectedEmailId, setSelectedEmailId] = useState(null)
+  const [selectedEmailId, setSelectedEmailId] = useState(initialEmailId || null)
 
   const emails = data?.emails || []
   const actions = data?.actions || []
   const drafts = data?.drafts || []
 
-  // Auto-select first email when loaded
+  // Auto-select first email when loaded if none is selected
   useMemo(() => {
     if (emails.length > 0 && !selectedEmailId) {
-      setSelectedEmailId(emails[0].id)
+      // If initialEmailId was provided, ensure we select it even if emails loaded late
+      if (initialEmailId && emails.some(e => e.id === initialEmailId)) {
+        setSelectedEmailId(initialEmailId)
+      } else {
+        setSelectedEmailId(emails[0].id)
+      }
     }
-  }, [emails, selectedEmailId])
+  }, [emails, selectedEmailId, initialEmailId])
 
   const selectedEmail = emails.find(e => e.id === selectedEmailId)
   
