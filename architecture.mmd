@@ -1,39 +1,70 @@
+%%{init: {
+  'theme': 'base',
+  'themeVariables': {
+    'fontFamily': 'Trebuchet MS, Arial, sans-serif',
+    'fontSize': '16px',
+    'background': '#0f172a',
+    'primaryColor': '#1e293b',
+    'primaryTextColor': '#f8fafc',
+    'lineColor': '#94a3b8',
+    'clusterBkg': '#1e293b',
+    'clusterBorder': '#334155',
+    'titleColor': '#e2e8f0'
+  }
+}}%%
 flowchart TD
-    subgraph Frontend["Dashboard UI (React / Vite)"]
-        Inbox[Mission Control Inbox]
-        Thread[Thread Workspace]
-        Analytics[Analytics Dashboard]
+    classDef ui fill:#3b82f6,stroke:#2563eb,stroke-width:2px,color:#fff,rx:8,ry:8
+    classDef api fill:#10b981,stroke:#059669,stroke-width:2px,color:#fff,rx:8,ry:8
+    classDef ai fill:#8b5cf6,stroke:#7c3aed,stroke-width:2px,color:#fff,rx:8,ry:8
+    classDef db fill:#f59e0b,stroke:#d97706,stroke-width:2px,color:#fff,rx:8,ry:8
+    classDef ext fill:#475569,stroke:#334155,stroke-width:2px,color:#fff,rx:8,ry:8
+
+    subgraph Client["💻 Presentation Layer (React + Vite)"]
+        direction LR
+        Inbox["Inbox Dashboard"]:::ui
+        Workspace["Thread Workspace"]:::ui
+        Analytics["Analytics Engine"]:::ui
     end
 
-    subgraph API["FastAPI Backend"]
-        Ingest[Ingestion Pipeline]
-        JobProc[Job Processor]
-        Endpoints[REST Endpoints]
+    subgraph API["⚙️ Backend Services (FastAPI)"]
+        direction LR
+        Endpoints["REST Endpoints"]:::api
+        Ingest["Email Ingestion"]:::api
+        JobProc["Job Orchestrator"]:::api
     end
 
-    subgraph Intelligence["Multi-Layer Intelligence Engine"]
-        Heuristics[Layer 1: Heuristic Filter]
-        LLMClass[Layer 2: LLM Classifier]
-        RAG[Layer 3: RAG Knowledge]
-        Agent[Layer 4: Autonomous Triage Agent]
-        WebIntel[Layer 5: Web Intelligence Scraper]
+    subgraph Intelligence["🧠 Cognitive Engine (Multi-Layer)"]
+        direction LR
+        Heuristics["L1: Heuristics Filter"]:::ai
+        LLMClass["L2: LLM Classifier"]:::ai
+        RAG["L3: RAG Retrieval"]:::ai
+        Agent["L4: ReAct Agent"]:::ai
+        WebScraper["L5: Web Intel Scraper"]:::ai
     end
 
-    subgraph Data["Data & Storage"]
-        Postgres[(PostgreSQL)]
-        ChromaDB[(ChromaDB Vector Store)]
+    subgraph Storage["🗄️ Persistence Layer"]
+        direction LR
+        Postgres[("PostgreSQL\n(Relational)")]:::db
+        Chroma[("ChromaDB\n(Vector)")]:::db
     end
 
-    %% Flow
-    Frontend <--> |HTTP/REST| Endpoints
-    Endpoints <--> Postgres
-    Endpoints -.-> |Triggers| Ingest
-    Ingest --> |Queue| JobProc
-    JobProc --> Heuristics
-    JobProc --> LLMClass
-    LLMClass <--> RAG
-    JobProc --> Agent
-    Agent <--> RAG
-    Agent <--> WebIntel
-    JobProc <--> Postgres
-    RAG <--> ChromaDB
+    External["📧 External Emails"]:::ext
+
+    %% Connect layers
+    Client <==>|"HTTP/REST"| Endpoints
+    External ==>|"Webhooks/IMAP"| Ingest
+
+    Endpoints -.->|"Triggers"| Ingest
+    Ingest ==>|"Dispatch"| JobProc
+
+    JobProc ==>|"1. Fast Filter"| Heuristics
+    JobProc ==>|"2. Categorize"| LLMClass
+    JobProc ==>|"3. Deep Triage"| Agent
+
+    LLMClass -.->|"Fetch Context"| RAG
+    Agent <==>|"Tool: Search"| RAG
+    Agent <==>|"Tool: Scrape"| WebScraper
+
+    JobProc <==>|"Save State/Actions"| Postgres
+    Endpoints <==>|"Query Data"| Postgres
+    RAG <==>|"Similarity Search"| Chroma
