@@ -326,7 +326,7 @@ export default function Analytics() {
                       <div className="text-slate-500 text-xs">{account.name} ({account.email})</div>
                     </td>
                     <td className="px-4 py-3 text-green-400 font-mono">${account.account_value.toLocaleString()}</td>
-                    <td className="px-4 py-3 text-red-400 font-bold">{account.churn_risk_score.toFixed(2)}</td>
+                    <td className="px-4 py-3 text-red-400 font-bold">{account.churn_risk_score != null ? Number(account.churn_risk_score).toFixed(2) : 'N/A'}</td>
                   </tr>
                 ))}
               </tbody>

@@ -37,8 +37,8 @@ function ContactCard({ contact, email }) {
       <div className="text-right">
         <p className="text-sm text-slate-400 mb-1">Account Value</p>
         <p className="text-xl font-bold text-green-400">${contact.account_value.toLocaleString()}</p>
-        {contact.churn_risk_score && (
-          <p className="text-xs text-slate-500 mt-1">Churn Risk: {contact.churn_risk_score.toFixed(2)}</p>
+        {contact.churn_risk_score != null && (
+          <p className="text-xs text-slate-500 mt-1">Churn Risk: {Number(contact.churn_risk_score).toFixed(2)}</p>
         )}
       </div>
     </div>
@@ -121,10 +121,10 @@ function RagContextPanel({ query }) {
         {data.results.map((result, idx) => (
           <div key={idx} className="bg-slate-900 rounded p-3 border border-slate-800">
             <div className="flex justify-between items-start mb-2">
-              <span className="text-xs font-mono text-teal-300 bg-teal-900/30 px-2 py-0.5 rounded">{result.source}</span>
-              <span className="text-xs text-slate-500">Score: {result.similarity.toFixed(3)}</span>
+              <span className="text-xs font-mono text-teal-300 bg-teal-900/30 px-2 py-0.5 rounded">{result.source_doc}</span>
+              <span className="text-xs text-slate-500">Score: {result.similarity_score?.toFixed(3) || 'N/A'}</span>
             </div>
-            <p className="text-xs text-slate-400 line-clamp-3">{result.content}</p>
+            <p className="text-xs text-slate-400 line-clamp-3">{result.chunk_text}</p>
           </div>
         ))}
       </div>
@@ -360,7 +360,7 @@ export default function ThreadWorkspace({ contactEmail, onBack }) {
                 <div>
                   <p className="text-xs text-slate-500 mb-1 uppercase tracking-wider">Sentiment</p>
                   <p className="text-sm font-medium text-slate-200">
-                    {selectedEmail.sentiment_score !== null ? selectedEmail.sentiment_score.toFixed(2) : 'N/A'}
+                    {selectedEmail.sentiment_score !== null ? Number(selectedEmail.sentiment_score).toFixed(2) : 'N/A'}
                   </p>
                 </div>
                 <div>
@@ -372,7 +372,7 @@ export default function ThreadWorkspace({ contactEmail, onBack }) {
                 <div>
                   <p className="text-xs text-slate-500 mb-1 uppercase tracking-wider">Confidence</p>
                   <p className="text-sm font-medium text-slate-200">
-                    {selectedEmail.confidence !== null ? (selectedEmail.confidence * 100).toFixed(0) + '%' : 'N/A'}
+                    {selectedEmail.confidence !== null ? (Number(selectedEmail.confidence) * 100).toFixed(0) + '%' : 'N/A'}
                   </p>
                 </div>
               </div>

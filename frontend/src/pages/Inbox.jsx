@@ -52,8 +52,9 @@ function Badge({ label, colorMap }) {
 
 function SentimentDot({ score }) {
   if (score === null || score === undefined) return <span className="text-slate-600">—</span>
-  const color = score > 0.2 ? 'text-green-400' : score < -0.2 ? 'text-red-400' : 'text-yellow-400'
-  return <span className={`font-mono text-sm ${color}`}>{score.toFixed(2)}</span>
+  const numScore = Number(score);
+  const color = numScore > 0.2 ? 'text-green-400' : numScore < -0.2 ? 'text-red-400' : 'text-yellow-400'
+  return <span className={`font-mono text-sm ${color}`}>{numScore.toFixed(2)}</span>
 }
 
 /* ------------------------------------------------------------------ */
