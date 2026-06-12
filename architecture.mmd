@@ -25,7 +25,9 @@ flowchart TD
     end
 
     %% Flow
-    Frontend <--> |HTTP/REST| API
+    Frontend <--> |HTTP/REST| Endpoints
+    Endpoints <--> Postgres
+    Endpoints -.-> |Triggers| Ingest
     Ingest --> |Queue| JobProc
     JobProc --> Heuristics
     JobProc --> LLMClass
@@ -33,6 +35,5 @@ flowchart TD
     JobProc --> Agent
     Agent <--> RAG
     Agent <--> WebIntel
-    
-    API <--> Postgres
+    JobProc <--> Postgres
     RAG <--> ChromaDB
