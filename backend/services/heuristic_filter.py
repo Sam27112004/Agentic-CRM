@@ -16,13 +16,21 @@ SPAM_PATTERNS = (
 SECURITY_PATTERNS = (
     "urgent",
     "p0",
-    "legal",
-    "cease and desist",
     "ransomware",
     "btc",
     "bitcoin",
     "data breach",
     "suspicious login",
+)
+
+LEGAL_PATTERNS = (
+    "legal",
+    "cease and desist",
+    "gdpr",
+    "data portability",
+    "article 20",
+    "right to be forgotten",
+    "data processing agreement",
 )
 
 DOMAIN_REPUTATION_BLOCKLIST = {
@@ -36,6 +44,7 @@ DOMAIN_REPUTATION_BLOCKLIST = {
 class HeuristicResult:
     is_spam: bool
     is_security: bool
+    is_legal: bool
     is_internal: bool
     priority_score: int
     labels: list[str]
@@ -81,6 +90,7 @@ def apply_heuristics(subject: str, body: str, sender: str) -> HeuristicResult:
 
     is_spam = _contains_any(lower_text, SPAM_PATTERNS) or domain in DOMAIN_REPUTATION_BLOCKLIST
     is_security = _contains_any(lower_text, SECURITY_PATTERNS)
+    is_legal = _contains_any(lower_text, LEGAL_PATTERNS)
     is_internal = domain.endswith("internal.com") or domain.endswith("mycompany.com")
     priority_score = score_priority(subject, body, sender)
 
@@ -89,6 +99,8 @@ def apply_heuristics(subject: str, body: str, sender: str) -> HeuristicResult:
         labels.append("spam")
     if is_security:
         labels.append("security")
+    if is_legal:
+        labels.append("legal")
     if is_internal:
         labels.append("internal")
     labels.append(f"priority_{priority_score}")
@@ -96,6 +108,7 @@ def apply_heuristics(subject: str, body: str, sender: str) -> HeuristicResult:
     return HeuristicResult(
         is_spam=is_spam,
         is_security=is_security,
+        is_legal=is_legal,
         is_internal=is_internal,
         priority_score=priority_score,
         labels=labels,

@@ -115,6 +115,7 @@ def list_emails(
     status_filter: Optional[str] = Query(None, alias="status"),
     category: Optional[str] = None,
     urgency: Optional[str] = None,
+    requires_human: Optional[bool] = None,
     sender: Optional[str] = None,
     sort_by: str = Query("timestamp", description="Sort field: timestamp, category, urgency, sentiment_score"),
     sort_dir: str = Query("desc", description="Sort direction: asc or desc"),
@@ -130,6 +131,8 @@ def list_emails(
         query = query.where(Email.category == category)
     if urgency:
         query = query.where(Email.urgency == urgency)
+    if requires_human is not None:
+        query = query.where(Email.requires_human == requires_human)
     if sender:
         query = query.where(Email.sender.ilike(f"%{sender}%"))
 

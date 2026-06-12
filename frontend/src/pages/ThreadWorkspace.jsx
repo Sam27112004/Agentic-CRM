@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react'
-import { useThread } from '../hooks/useApi.js'
+import { useThread, useRagSearch } from '../hooks/useApi.js'
 
 /* ------------------------------------------------------------------ */
 /* Helper Components                                                   */
@@ -96,6 +96,35 @@ function AgentLogViewer({ action }) {
                 {typeof step.observation === 'object' ? JSON.stringify(step.observation) : step.observation}
               </p>
             )}
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function RagContextPanel({ query }) {
+  const { data, loading } = useRagSearch(query)
+
+  if (loading || !data || !data.results || data.results.length === 0) return null
+
+  return (
+    <div className="mt-6 rounded-lg border border-teal-500/30 bg-slate-950 p-4">
+      <h4 className="text-sm font-semibold text-teal-400 uppercase tracking-wider mb-4 flex items-center gap-2">
+        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+          <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z" />
+          <path fillRule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h3a1 1 0 100-2h-3z" clipRule="evenodd" />
+        </svg>
+        RAG Knowledge Context
+      </h4>
+      <div className="space-y-3">
+        {data.results.map((result, idx) => (
+          <div key={idx} className="bg-slate-900 rounded p-3 border border-slate-800">
+            <div className="flex justify-between items-start mb-2">
+              <span className="text-xs font-mono text-teal-300 bg-teal-900/30 px-2 py-0.5 rounded">{result.source}</span>
+              <span className="text-xs text-slate-500">Score: {result.similarity.toFixed(3)}</span>
+            </div>
+            <p className="text-xs text-slate-400 line-clamp-3">{result.content}</p>
           </div>
         ))}
       </div>
@@ -340,6 +369,9 @@ export default function ThreadWorkspace({ contactEmail, onBack }) {
               {emailDrafts.map(draft => (
                 <DraftViewer key={draft.id} draft={draft} onRefetch={refetch} />
               ))}
+
+              {/* RAG Context Panel */}
+              <RagContextPanel query={selectedEmail.subject + " " + selectedEmail.body} />
 
               {/* Agent Reasoning */}
               <AgentLogViewer action={agentLogAction} />

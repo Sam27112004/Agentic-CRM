@@ -62,6 +62,7 @@ function SentimentDot({ score }) {
 
 const STATUS_TABS = [
   { key: null, label: 'All' },
+  { key: 'NeedsHuman', label: 'Needs Human' },
   { key: 'Received', label: 'Pending' },
   { key: 'Escalated', label: 'Escalated' },
   { key: 'Replied', label: 'Replied' },
@@ -165,17 +166,18 @@ export default function Inbox({ onSelectThread }) {
   const [page, setPage] = useState(1)
   const [sorting, setSorting] = useState([{ id: 'timestamp', desc: true }])
 
-  const filters = useMemo(() => ({
-    status: statusFilter,
-    category: categoryFilter || undefined,
-    sender: senderSearch || undefined,
-    sort_by: sorting[0]?.id || 'timestamp',
-    sort_dir: sorting[0]?.desc ? 'desc' : 'asc',
-    page,
-    page_size: 50,
-  }), [statusFilter, categoryFilter, senderSearch, sorting, page])
+  const activeFilters = useMemo(() => {
+    let filters = { sort_by: sorting[0].id, sort_dir: sorting[0].desc ? 'desc' : 'asc', page, page_size: 50, category: categoryFilter || undefined }
+    if (statusFilter === 'NeedsHuman') {
+      filters.requires_human = true
+    } else if (statusFilter) {
+      filters.status = statusFilter
+    }
+    if (senderSearch) filters.sender = senderSearch
+    return filters
+  }, [statusFilter, categoryFilter, senderSearch, sorting, page])
 
-  const { emails, total, loading, error, refetch } = useEmails(filters)
+  const { emails, total, loading, error, refetch } = useEmails(activeFilters)
   const { stats, refetchStats } = useDashboardStats()
 
   const handleRefresh = () => {

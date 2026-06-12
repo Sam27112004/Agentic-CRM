@@ -15,6 +15,7 @@ export function useEmails(filters = {}) {
       if (filters.status) params.set('status', filters.status)
       if (filters.category) params.set('category', filters.category)
       if (filters.urgency) params.set('urgency', filters.urgency)
+      if (filters.requires_human) params.set('requires_human', 'true')
       if (filters.sender) params.set('sender', filters.sender)
       if (filters.sort_by) params.set('sort_by', filters.sort_by)
       if (filters.sort_dir) params.set('sort_dir', filters.sort_dir)
@@ -141,6 +142,25 @@ export function useReputation(companyName) {
       .catch(() => setData(null))
       .finally(() => setLoading(false))
   }, [companyName])
+
+  return { data, loading }
+}
+
+export function useRagSearch(query) {
+  const [data, setData] = useState(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    if (!query) {
+      setLoading(false)
+      return
+    }
+    fetch(`${API_BASE}/rag/search?q=${encodeURIComponent(query)}`)
+      .then((res) => res.json())
+      .then(setData)
+      .catch(() => setData(null))
+      .finally(() => setLoading(false))
+  }, [query])
 
   return { data, loading }
 }

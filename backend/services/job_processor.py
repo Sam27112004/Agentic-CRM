@@ -59,17 +59,48 @@ class JobProcessor:
                 # --- Layer 2: LLM classification for non-trivial emails ---
                 llm_result = self._run_llm_classification(email)
                 if llm_result:
+                    if triage.is_legal:
+                        llm_result.category = "Legal"
+                        llm_result.requires_human = True
+                        email.status = "Escalated"
+                    
                     email.category = llm_result.category
                     email.sentiment_score = llm_result.sentiment_score
                     email.urgency = llm_result.urgency
                     email.requires_human = llm_result.requires_human
                     email.confidence = llm_result.confidence
                     email.raw_entities = llm_result.detected_entities.model_dump() if hasattr(llm_result.detected_entities, "model_dump") else {}
+                    # Check sentiment deterioration (3+ consecutive negative emails)
+                    from sqlalchemy import select
+                    from backend.models.contact import Contact
+                    recent_emails = self.db.scalars(
+                        select(Email)
+                        .where(Email.sender == email.sender)
+                        .where(Email.sentiment_score != None)
+                        .order_by(Email.timestamp.desc())
+                        .limit(3)
+                    ).all()
                     
-                    if llm_result.suggested_reply:
-                        from backend.models.draft import Draft
-                        draft = Draft(email_id=email.id, content=llm_result.suggested_reply)
-                        self.db.add(draft)
+                    if len(recent_emails) == 3 and all(e.sentiment_score and float(e.sentiment_score) < -0.2 for e in recent_emails):
+                        logger.warning(f"Sentiment deterioration detected for {email.sender}")
+                        email.status = "Escalated"
+                        email.requires_human = True
+                        email.urgency = "High"
+                        email.category = "Complaint"
+                        
+                        # Trigger web scraping
+                        contact_company = self.db.scalars(select(Contact.company).where(Contact.email == email.sender)).first()
+                        if contact_company:
+                            from backend.services.agent_tools import scrape_public_sentiment
+                            scrape_public_sentiment(self.db, contact_company)
+
+                    self.db.commit()
+
+                    # --- Layer 4: Autonomous Agent Triage ---
+                    from backend.services.agent import run_agent
+                    logger.info(f"Running agent for email {email.id}")
+                    run_agent(db=self.db, email_id=email.id, dry_run=False)
+
                 else:
                     email.category = "Pending"
 
