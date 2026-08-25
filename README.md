@@ -255,6 +255,8 @@ npm install
 # Terminal 1 — Backend
 cd backend
 uvicorn main:app --reload --port 8000
+# or
+uvicorn backend.main:app --reload --port 8000 #if outside backend directory (works from the project root)
 
 # Terminal 2 — Frontend
 cd frontend
@@ -363,22 +365,42 @@ curl "http://localhost:8000/rag/search?q=GDPR+data+portability"
 
 ---
 
-## Running the Email Simulation
+## Resetting/Clearing the Database
 
-Replay `email-data-advanced.json` as a real-time stream:
+If you want to clear all emails, threads, contacts, actions, drafts, and jobs from the database (for example, to re-run the simulation from scratch), run the database reset script:
 
 ```bash
-# Default: 1 email per second
-python -m services.simulator
+# If running from the project root:
+python backend/reset_db.py
 
-# Load test: 10 emails per second
-SIMULATION_SPEED=10 python -m services.simulator
-
-# Single email (by message_id)
-python -m services.simulator --message-id msg_052
+# If running from inside the backend directory:
+python reset_db.py
 ```
 
-Or via the API:
+---
+
+## Running the Email Simulation
+
+To replay `email-data-advanced.json` as a real-time stream:
+
+```bash
+# If running from the project root (recommended):
+python backend/services/simulator.py
+
+# If running from inside the backend directory:
+python -m services.simulator
+
+# Load test: 10 emails per second (from root)
+# Windows PowerShell:
+$env:SIMULATION_SPEED=10; python backend/services/simulator.py
+# Linux/macOS:
+SIMULATION_SPEED=10 python backend/services/simulator.py
+
+# Single email by message_id (from root):
+python backend/services/simulator.py --message-id msg_052
+```
+
+Or via the API (run from the project root):
 ```bash
 curl -X POST http://localhost:8000/api/ingest \
   -H "Content-Type: application/json" \
