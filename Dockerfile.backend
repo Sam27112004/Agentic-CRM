@@ -22,5 +22,5 @@ COPY . .
 
 EXPOSE 8000
 
-# Run FastAPI with uvicorn listening on all network interfaces
-CMD ["uvicorn", "backend.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Use shell form to expand the $PORT environment variable dynamically provided by Render / Cloud
+CMD ["sh", "-c", "uvicorn backend.main:app --host 0.0.0.0 --port ${PORT:-8000}"]

@@ -58,8 +58,6 @@ app.add_middleware(
 @app.on_event("startup")
 def on_startup() -> None:
     init_db()
-    # Pre-load the RAG service so sentence-transformers is warm for first query
-    get_rag_service()
 
 
 def process_background_job(job_id: int) -> None:

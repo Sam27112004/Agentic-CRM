@@ -85,32 +85,49 @@ class RAGService:
     def __init__(self) -> None:
         self.chroma_client = chromadb.PersistentClient(path=CHROMA_PERSIST_PATH)
         self.collection = self.chroma_client.get_or_create_collection(name="knowledge_base")
-        self.model = SentenceTransformer(EMBEDDING_MODEL)
+        self._model = None
+
+    @property
+    def model(self):
+        if self._model is None:
+            try:
+                from sentence_transformers import SentenceTransformer
+                self._model = SentenceTransformer(EMBEDDING_MODEL)
+            except Exception as e:
+                import logging
+                logging.getLogger(__name__).warning(f"Embedding model initialization failed: {e}")
+                self._model = None
+        return self._model
 
     def search_knowledge_base(self, query: str, top_k: int = 3) -> List[Dict[str, Any]]:
         """Embed query and return top-k chunks with source doc and similarity score."""
-        query_embedding = self.model.encode([query]).tolist()
-        results = self.collection.query(
-            query_embeddings=query_embedding,
-            n_results=top_k,
-            include=["documents", "metadatas", "distances"],
-        )
+        if not self.model:
+            return []
 
-        chunks = []
-        documents = results.get("documents", [[]])[0]
-        metadatas = results.get("metadatas", [[]])[0]
-        distances = results.get("distances", [[]])[0]
+        try:
+            query_embedding = self.model.encode([query]).tolist()
+            results = self.collection.query(
+                query_embeddings=query_embedding,
+                n_results=top_k,
+                include=["documents", "metadatas", "distances"],
+            )
 
-        for doc, meta, dist in zip(documents, metadatas, distances):
-            # ChromaDB returns L2 distance; convert to a 0-1 similarity score
-            similarity = round(1 / (1 + dist), 4)
-            chunks.append({
-                "chunk_text": doc,
-                "source_doc": meta.get("source_doc", "unknown"),
-                "similarity_score": similarity,
-            })
+            chunks = []
+            documents = results.get("documents", [[]])[0]
+            metadatas = results.get("metadatas", [[]])[0]
+            distances = results.get("distances", [[]])[0]
 
-        return chunks
+            for doc, meta, dist in zip(documents, metadatas, distances):
+                similarity = round(1 / (1 + dist), 4)
+                chunks.append({
+                    "chunk_text": doc,
+                    "source_doc": meta.get("source_doc", "unknown"),
+                    "similarity_score": similarity,
+                })
+
+            return chunks
+        except Exception:
+            return []
 
 
 if __name__ == "__main__":
