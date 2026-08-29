@@ -4,7 +4,7 @@ services:
   # ---------------------------------------------------------------------------
   - type: web
     name: agentic-crm-backend
-    runtime: docker
+    env: docker
     dockerfilePath: ./Dockerfile.backend
     plan: free
     region: oregon
@@ -26,8 +26,9 @@ services:
   # ---------------------------------------------------------------------------
   # 2. React Frontend Static Site
   # ---------------------------------------------------------------------------
-  - type: static
+  - type: web
     name: agentic-crm-frontend
+    env: static
     rootDir: frontend
     buildCommand: npm ci && npm run build
     staticPublishPath: ./dist
