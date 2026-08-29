@@ -36,7 +36,7 @@ def test_process_job_spam(mock_apply_heuristics, mock_db):
     mock_db.get.side_effect = [mock_job, mock_email]
     
     mock_apply_heuristics.return_value = HeuristicResult(
-        is_spam=True, is_security=False, is_internal=False, priority_score=1, labels=["spam"]
+        is_spam=True, is_security=False, is_legal=False, is_internal=False, priority_score=1, labels=["spam"]
     )
     
     processor = JobProcessor(mock_db)
@@ -48,19 +48,30 @@ def test_process_job_spam(mock_apply_heuristics, mock_db):
     assert mock_job.status == "Completed"
     assert mock_db.commit.called
 
+from backend.services.llm_classifier import ClassificationResult
+
+@patch("backend.services.agent.run_agent")
 @patch("backend.services.job_processor.JobProcessor._run_llm_classification")
 @patch("backend.services.job_processor.apply_heuristics")
-def test_process_job_normal_email(mock_apply_heuristics, mock_run_llm, mock_db):
+def test_process_job_normal_email(mock_apply_heuristics, mock_run_llm, mock_run_agent, mock_db):
     mock_job = ProcessingJob(id=1, status="Queued", email_id=1)
     mock_email = Email(id=1, subject="Test", body="Test", sender="user@example.com")
     
     mock_db.get.side_effect = [mock_job, mock_email]
+    mock_db.scalars.return_value.all.return_value = []
     
     mock_apply_heuristics.return_value = HeuristicResult(
-        is_spam=False, is_security=False, is_internal=False, priority_score=3, labels=["priority_3"]
+        is_spam=False, is_security=False, is_legal=False, is_internal=False, priority_score=3, labels=["priority_3"]
     )
     
-    mock_run_llm.return_value = "Inquiry"
+    mock_run_llm.return_value = ClassificationResult(
+        category="Inquiry",
+        sentiment="Neutral",
+        sentiment_score=0.0,
+        urgency="Low",
+        requires_human=False,
+        confidence=0.9
+    )
     
     processor = JobProcessor(mock_db)
     result = processor.process_job(1)

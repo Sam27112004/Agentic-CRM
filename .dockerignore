@@ -1,0 +1,25 @@
+# Version control
+.git
+.gitignore
+
+# Environment & Secrets (NEVER bake into images!)
+.env
+.env.*
+!.env.example
+
+# Python cache & virtual environments
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+env/
+.pytest_cache/
+
+# Node / Frontend build artifacts
+frontend/node_modules/
+frontend/dist/
+
+# Local databases and uploads
+chroma_db/
+*.sqlite3
+*.db

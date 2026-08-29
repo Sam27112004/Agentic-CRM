@@ -1,0 +1,49 @@
+services:
+  # ---------------------------------------------------------------------------
+  # 1. FastAPI Backend Web Service
+  # ---------------------------------------------------------------------------
+  - type: web
+    name: agentic-crm-backend
+    runtime: docker
+    dockerfilePath: ./Dockerfile.backend
+    plan: free
+    region: oregon
+    healthCheckPath: /docs
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: agentic-crm-db
+          property: connectionString
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: LLM_MODEL
+        value: gemini-2.0-flash
+      - key: EMBEDDING_MODEL
+        value: all-MiniLM-L6-v2
+      - key: CHROMA_PERSIST_PATH
+        value: /tmp/chroma_db
+
+  # ---------------------------------------------------------------------------
+  # 2. React Frontend Static Site
+  # ---------------------------------------------------------------------------
+  - type: web
+    name: agentic-crm-frontend
+    runtime: static
+    rootDir: frontend
+    buildCommand: npm ci && npm run build
+    staticPublishPath: ./dist
+    plan: free
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+
+# ---------------------------------------------------------------------------
+# 3. Managed PostgreSQL Database
+# ---------------------------------------------------------------------------
+databases:
+  - name: agentic-crm-db
+    databaseName: agentic_crm
+    user: postgres
+    plan: free
+    region: oregon
