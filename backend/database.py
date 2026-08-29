@@ -16,6 +16,10 @@ DATABASE_URL = os.getenv(
     "postgresql+psycopg2://postgres:password@localhost:5432/agentic_crm",
 )
 
+# Render provides postgres://, but SQLAlchemy 1.4+ requires postgresql://
+if DATABASE_URL.startswith("postgres://"):
+    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
+
 engine = create_engine(DATABASE_URL, pool_pre_ping=True, future=True)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 

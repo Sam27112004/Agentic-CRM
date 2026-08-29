@@ -44,6 +44,6 @@ services:
 databases:
   - name: agentic-crm-db
     databaseName: agentic_crm
-    user: postgres
+    user: crm_user
     plan: free
     region: oregon
