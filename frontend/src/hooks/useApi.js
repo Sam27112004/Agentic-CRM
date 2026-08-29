@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 
-const API_BASE = ''
+const API_BASE = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '')
 
 export function useEmails(filters = {}) {
   const [data, setData] = useState({ emails: [], total: 0, page: 1, page_size: 50 })
