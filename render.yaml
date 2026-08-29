@@ -26,13 +26,11 @@ services:
   # ---------------------------------------------------------------------------
   # 2. React Frontend Static Site
   # ---------------------------------------------------------------------------
-  - type: web
+  - type: static
     name: agentic-crm-frontend
-    runtime: static
     rootDir: frontend
     buildCommand: npm ci && npm run build
     staticPublishPath: ./dist
-    plan: free
     routes:
       - type: rewrite
         source: /*
